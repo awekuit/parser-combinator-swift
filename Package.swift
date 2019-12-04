@@ -8,15 +8,18 @@ let package = Package(
     products: [
         .library(
             name: "parser-combinator-swift",
-            targets: ["parser-combinator-swift"]),
+            targets: ["parser-combinator-swift"]
+        ),
     ],
     dependencies: [],
     targets: [
         .target(
             name: "parser-combinator-swift",
-            dependencies: []),
+            dependencies: []
+        ),
         .testTarget(
             name: "parser-combinator-swiftTests",
-            dependencies: ["parser-combinator-swift"]),
+            dependencies: ["parser-combinator-swift"]
+        ),
     ]
 )

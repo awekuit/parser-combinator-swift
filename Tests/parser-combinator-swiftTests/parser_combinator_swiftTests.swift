@@ -1,5 +1,5 @@
-import XCTest
 @testable import parser_combinator_swift
+import XCTest
 
 final class parser_combinator_swiftTests: XCTestCase {
     func testExample() {
