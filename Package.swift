@@ -4,22 +4,27 @@
 import PackageDescription
 
 let package = Package(
-    name: "parser-combinator-swift",
+    name: "ParserCombinatorSwift",
     products: [
         .library(
-            name: "parser-combinator-swift",
-            targets: ["parser-combinator-swift"]
+            name: "ParserCombinatorSwift",
+            targets: ["ParserCombinatorSwift"]
         ),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/Quick/Quick.git", from: "1.3.1"),
+        .package(url: "https://github.com/Quick/Nimble.git", from: "7.0.1"),
+    ],
     targets: [
         .target(
-            name: "parser-combinator-swift",
-            dependencies: []
+            name: "ParserCombinatorSwift",
+            dependencies: [],
+            path: "Sources"
         ),
         .testTarget(
-            name: "parser-combinator-swiftTests",
-            dependencies: ["parser-combinator-swift"]
+            name: "ParserCombinatorSwiftTests",
+            dependencies: ["ParserCombinatorSwift", "Quick", "Nimble"],
+            path: "Tests"
         ),
     ]
 )
