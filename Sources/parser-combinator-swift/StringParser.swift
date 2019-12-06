@@ -18,15 +18,27 @@ public enum StringParser {
     /// - Returns: a parser that parses that String
     public static func string(_ string: String) -> Parser<String, String.Index, String> {
         return Parser<String, String.Index, String> { source, index in
-            let count: Int = string.count
-            guard let endIndex = source.index(index, offsetBy: count, limitedBy: source.endIndex) else {
-                return .failure(Errors.noMoreSources)
+            var i = index
+            for c in string {
+                if i >= source.endIndex {
+                    return .failure(Errors.noMoreSources)
+                }
+                if c != source[i] {
+                    return .failure(Errors.unexpectedCharacter(expected: c, got: source[i]))
+                }
+                i = source.index(after: i)
             }
-            let got = String(source[index ..< endIndex])
-            if got == string {
-                return .success(result: string, source: source, resultIndex: endIndex)
+            return .success(result: string, source: source, resultIndex: i)
+        }
+    }
+
+    public static func char(_ char: Character) -> Parser<String, String.Index, Character> {
+        return Parser<String, String.Index, Character> { source, index in
+            let c = source[index]
+            if c == char {
+                return .success(result: char, source: source, resultIndex: source.index(after: index))
             } else {
-                return .failure(Errors.unexpectedToken(expected: string, got: got))
+                return .failure(Errors.unexpectedCharacter(expected: char, got: c))
             }
         }
     }
@@ -36,22 +48,73 @@ public enum StringParser {
     /// - Parameter length: the length the string should have
     /// - Returns: a parser that parses a string with exactly the given length
     public static func string(length: Int) -> Parser<String, String.Index, String> {
-        return one.rep(length, length).map { String($0) }
+        return satisfy({_ in true}, min:length, max: length).map { String($0) }
     }
 
-    public static let ascii = one.filter { $0.isASCII }
+    public static let ascii = satisfy { $0.isASCII }
+
+    public static func charIn(_ xs: String) -> Parser<String, String.Index, Character> { return charIn(Array(xs)) }
 
     public static func charIn(_ xs: Character...) -> Parser<String, String.Index, Character> { return charIn(Set(xs)) }
 
     public static func charIn(_ xs: [Character]) -> Parser<String, String.Index, Character> { return charIn(Set(xs)) }
 
     public static func charIn(_ set: Set<Character>) -> Parser<String, String.Index, Character> {
-        return StringParser.one.filter { set.contains($0) }
+        return satisfy{ set.contains($0) }
     }
 
     // TODO: Deprecated if performance is worse than `charIn(_ set: Set<Character>)`
     public static func charIn(_ charset: CharacterSet) -> Parser<String, String.Index, Character> {
-        return StringParser.one.filter { charset.contains($0.unicodeScalars[$0.unicodeScalars.startIndex]) }
+        return satisfy { charset.contains($0.unicodeScalars[$0.unicodeScalars.startIndex]) }
+    }
+
+    public static func charsIn(_ chars: String, min: Int, max: Int? = nil) -> Parser<String, String.Index, String> {
+        return charsIn(Array(chars), min:min, max:max).map{String($0)}
+    }
+
+    public static func charsIn(_ chars: [Character], min: Int, max: Int? = nil) -> Parser<String, String.Index, String> {
+        return charsIn(Set(chars), min:min, max:max).map{String($0)}
+    }
+
+    public static func charsIn(_ set: Set<Character>, min: Int, max: Int? = nil) -> Parser<String, String.Index, String> {
+        return satisfy({set.contains($0)}, min:min, max:max).map{String($0)}
+    }
+
+
+    public static func satisfy(_ f: @escaping (Character) -> Bool) -> Parser<String, String.Index, Character> {
+        return Parser<String, String.Index, Character> { source, index in
+            if index >= source.endIndex {
+                return .failure(Errors.noMoreSources)
+            }
+            let c = source[index]
+            if f(c) {
+                return .success(result: c, source: source, resultIndex: source.index(after: index))
+            }else {
+                return .failure(GenericParseError(message: "[WIP]")) // TODO: 
+            }
+        }
+    }
+
+    public static func satisfy(_ f: @escaping (Character) -> Bool, min : Int, max: Int? = nil) -> Parser<String, String.Index, [Character]> {
+        return Parser<String, String.Index, [Character]> { source, index in
+            var count = 0
+            var i = index
+            var buffer : [Character] = []
+            loop: while max == nil || count < max!, i < source.endIndex, f(source[i]) {
+                buffer.append(source[i])
+                count += 1
+                i = source.index(after: i)
+            }
+            if (buffer.isEmpty) {
+                return .failure(GenericParseError(message: "[WIP]")) // TODO:  
+            } else {
+                if count >= min {
+                    return .success(result: buffer, source: source, resultIndex: i)
+                } else {
+                    return .failure(GenericParseError(message: "[WIP]")) // TODO: 
+                }
+            }
+        }
     }
 
     public static func stringIn(_ xs: String...) -> Parser<String, String.Index, String> { return stringIn(Set(xs)) }
@@ -71,18 +134,16 @@ public enum StringParser {
         let errorMessage = "Did not match stringIn(\(xs)."
 
         return Parser<String, String.Index, String> { source, index in
-            let src = source[index...]
-            var subStr: String?
+            var subStr: Substring?
             let found = sets.first { len, set in
-                if src.count < len {
+                guard let end = source.index(index, offsetBy: len, limitedBy: source.endIndex) else {
                     return false
-                } else {
-                    subStr = String(src.prefix(len))
-                    return set.contains(subStr!)
                 }
+                subStr = source[index ..< end] // TODO: improve performance
+                return set.contains(String(subStr!))
             }
             if let (len, _) = found {
-                return .success(result: subStr!, source: source, resultIndex: source.index(index, offsetBy: len))
+                return .success(result: String(subStr!), source: source, resultIndex: source.index(index, offsetBy: len))
             } else {
                 return .failure(GenericParseError(message: errorMessage))
             }
@@ -92,18 +153,15 @@ public enum StringParser {
     // MARK: - numbers
 
     /// Parses a digit [0-9] from a given String
-    public static let digit: Parser<String, String.Index, Character> = one.filter { $0.isNumber }
+    public static let digit: Parser<String, String.Index, Character> = satisfy{$0.isNumber}
 
-    public static let digits: Parser<String, String.Index, String> = one.filter { $0.isNumber }.rep(1).map { String($0) }
+    public static let digits: Parser<String, String.Index, String> = satisfy({$0.isNumber}, min: 1).map{ String($0)}
 
     /// Parses a binary digit (0 or 1)
-    public static let binaryDigit: Parser<String, String.Index, Character> = charIn("0", "1")
-
-    /// Parses an octal digit (0 to 7)
-    public static let octalDigit: Parser<String, String.Index, Character> = digit.filter { Int(String($0))! < 8 }
+    public static let binaryDigit: Parser<String, String.Index, Character> = satisfy{ $0 == "0" || $0 == "1" }
 
     /// Parses a hexadecimal digit (0 to 15)
-    public static let hexDigit: Parser<String, String.Index, Character> = one.filter { $0.isHexDigit }
+    public static let hexDigit: Parser<String, String.Index, Character> = satisfy{$0.isHexDigit}
 
     // MARK: - Common characters
 
@@ -126,10 +184,10 @@ public enum StringParser {
     // MARK: - Whitespaces
 
     /// Parses one space character
-    public static let whitespace = one.filter { $0.isWhitespace }
+    public static let whitespace = satisfy{$0.isWhitespace}
 
     /// Parses at least one whitespace
-    public static let whitespaces = whitespace.rep(1)
+    public static let whitespaces = satisfy({ $0.isWhitespace }, min: 1)
 }
 
 extension Parser where Source == String, Index == String.Index {

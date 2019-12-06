@@ -26,6 +26,8 @@ public enum Errors: ParseError {
 
     case unexpectedToken(expected: String, got: String)
 
+    case unexpectedCharacter(expected: Character, got: Character)
+
     case positiveLookaheadFailed
 
     case negativeLookaheadFailed

@@ -65,8 +65,10 @@ public class Parser<Source, Index, Result> {
     /// - Parameter transform: transforming function that maps from R to B
     /// - Returns: a new parser that calls f on each successful parsing operation
     public func map<B>(_ transform: @escaping (Result) throws -> B) -> Parser<Source, Index, B> {
-        return flatMap { result -> Parser<Source, Index, B> in
-            Parser.just(try transform(result))
+        return Parser<Source, Index, B> { source1, index1 in
+            try self.parse(source1, index1).map { result, _, _ in
+                try transform(result)
+            }
         }
     }
 

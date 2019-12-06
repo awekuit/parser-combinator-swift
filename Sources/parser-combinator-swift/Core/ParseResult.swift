@@ -9,10 +9,10 @@ public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Inde
     ///
     /// - Parameter transform: a function to use to transform result
     /// - Returns: ParseResult with transformed result or fail with unchanged error.
-    public func map<B>(_ transform: (Result, Source, Index) -> B) -> ParseResult<Source, Index, B> {
+    public func map<B>(_ transform: (Result, Source, Index) throws -> B) throws -> ParseResult<Source, Index, B> {
         switch self {
         case let .success(result, source, resultIndex):
-            return .success(result: transform(result, source, resultIndex), source: source, resultIndex: resultIndex)
+            return .success(result: try transform(result, source, resultIndex), source: source, resultIndex: resultIndex)
         case let .failure(err):
             return .failure(err)
         }
