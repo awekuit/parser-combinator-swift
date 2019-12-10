@@ -24,7 +24,7 @@ public enum Errors: ParseError {
 
     case repeatFailed(min: Int, max: Int?, count: Int)
 
-    case unexpectedToken(expected: String, got: String)
+    case unexpectedString(expected: String, got: String)
 
     case unexpectedCharacter(expected: Character, got: Character)
 
@@ -41,6 +41,11 @@ public enum Errors: ParseError {
     case filtered
 
     case logged // FIXME:
+}
+
+// TODO: Rename
+public enum GenericErrors<A>: ParseError {
+    case unexpectedToken(expected: A, got: A)
 }
 
 /// A generic error that occured while parsing
