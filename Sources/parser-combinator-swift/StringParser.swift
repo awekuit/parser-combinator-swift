@@ -105,14 +105,10 @@ public enum StringParser {
                 count += 1
                 i = source.index(after: i)
             }
-            if (buffer.isEmpty) {
-                return .failure(GenericParseError(message: "[WIP]")) // TODO:  
+            if count >= min {
+                return .success(result: buffer, source: source, resultIndex: i)
             } else {
-                if count >= min {
-                    return .success(result: buffer, source: source, resultIndex: i)
-                } else {
-                    return .failure(GenericParseError(message: "[WIP]")) // TODO: 
-                }
+                return .failure(Errors.expectedAtLeast(min, got: count))
             }
         }
     }
