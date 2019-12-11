@@ -12,7 +12,7 @@
 
 import Foundation
 
-class TrieNode<T: Hashable, O> {
+public class TrieNode<T: Hashable, O> {
     var original: O?
     var value: T?
     weak var parentNode: TrieNode?
@@ -44,8 +44,8 @@ class TrieNode<T: Hashable, O> {
     }
 }
 
-class Trie<T: Hashable, O> {
-    typealias Node = TrieNode<T, O>
+public class Trie<T: Hashable, O> {
+    public typealias Node = TrieNode<T, O>
     public let root: Node
     fileprivate var wordCount: Int
 
@@ -60,12 +60,12 @@ class Trie<T: Hashable, O> {
     }
 
     /// Creates an empty trie.
-    init() {
+    public init() {
         root = Node()
         wordCount = 0
     }
 
-    func insert(_ elements: [T], _ original: O) {
+    public func insert(_ elements: [T], _ original: O) {
         guard !elements.isEmpty else {
             return
         }
@@ -86,4 +86,26 @@ class Trie<T: Hashable, O> {
         currentNode.isTerminating = true
         currentNode.original = original
     }
+}
+
+extension Trie where T == Character, O == String {
+
+    public func contains(_ source: String, _ index: String.Index) -> (String, String.Index)? {
+        var i: String.Index = index
+        var currentNode = root
+        loop: while i < source.endIndex {
+            let elem = source[i]
+            i = source.index(after: i)
+            if let childNode = currentNode.children[elem] {
+                currentNode = childNode
+                if (currentNode.isTerminating) {
+                    return (currentNode.original!, i)
+                }
+            } else {
+                return nil
+            }
+        }
+        return nil
+    }
+
 }

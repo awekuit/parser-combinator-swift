@@ -82,6 +82,7 @@ public enum StringParser {
 
 
     public static func satisfy(_ f: @escaping (Character) -> Bool) -> Parser<String, String.Index, Character> {
+        let error = GenericParseError(message: "[WIP]") // TODO:
         return Parser<String, String.Index, Character> { source, index in
             if index >= source.endIndex {
                 return .failure(Errors.noMoreSources)
@@ -90,7 +91,7 @@ public enum StringParser {
             if f(c) {
                 return .success(result: c, source: source, resultIndex: source.index(after: index))
             }else {
-                return .failure(GenericParseError(message: "[WIP]")) // TODO: 
+                return .failure(error)
             }
         }
     }
@@ -119,6 +120,7 @@ public enum StringParser {
 
     // TODO: Replace with one using trie
     public static func stringIn(_ xs: Set<String>) -> Parser<String, String.Index, String> {
+        let error = GenericParseError(message:"Did not match stringIn(\(xs).")
         let dict = Dictionary(grouping: xs) { s in
             s.count
         }
@@ -127,7 +129,6 @@ public enum StringParser {
         }.map { k, v in
             (k, Set(v))
         }
-        let errorMessage = "Did not match stringIn(\(xs)."
 
         return Parser<String, String.Index, String> { source, index in
             var subStr: Substring?
@@ -141,7 +142,21 @@ public enum StringParser {
             if let (len, _) = found {
                 return .success(result: String(subStr!), source: source, resultIndex: source.index(index, offsetBy: len))
             } else {
-                return .failure(GenericParseError(message: errorMessage))
+                return .failure(error)
+            }
+        }
+    }
+
+    public static func trieStringIn(_ xs: Set<String>) -> Parser<String, String.Index, String> {
+        let error = GenericParseError(message:"Did not match stringIn(\(xs)).")
+        let trie = Trie<Character, String>()
+        xs.forEach{ trie.insert(Array($0), $0) }
+
+        return Parser<String, String.Index,  String> { source, index in
+            if let (res, i) = trie.contains(source, index) {
+                return .success(result: res, source: source, resultIndex: i)
+            } else {
+                return .failure(error)
             }
         }
     }
