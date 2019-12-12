@@ -32,7 +32,7 @@ public enum Errors: ParseError {
 
     case negativeLookaheadFailed
 
-    case noMoreSources
+    case noMoreSource
 
     case notTheEnd
 

@@ -88,9 +88,8 @@ public class Trie<T: Hashable, O> {
     }
 }
 
-extension Trie where T == Character, O == String {
-
-    public func contains(_ source: String, _ index: String.Index) -> (String, String.Index)? {
+extension Trie where T == Character {
+    public func contains(_ source: String, _ index: String.Index) -> (O, String.Index)? {
         var i: String.Index = index
         var currentNode = root
         loop: while i < source.endIndex {
@@ -98,7 +97,7 @@ extension Trie where T == Character, O == String {
             i = source.index(after: i)
             if let childNode = currentNode.children[elem] {
                 currentNode = childNode
-                if (currentNode.isTerminating) {
+                if currentNode.isTerminating {
                     return (currentNode.original!, i)
                 }
             } else {
@@ -107,5 +106,4 @@ extension Trie where T == Character, O == String {
         }
         return nil
     }
-
 }
