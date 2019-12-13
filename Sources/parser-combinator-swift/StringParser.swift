@@ -165,6 +165,22 @@ public enum StringParser {
         }
     }
 
+    public static func dictionaryIn<A>(_ dict: Dictionary<String, A>) -> Parser<String, String.Index, A> {
+        let error = GenericParseError(message: "Did not match dictionaryIn(\(dict)).")
+        let trie = Trie<Character, A>()
+        dict.forEach { k, v in trie.insert(Array(k), v) }
+
+        return Parser<String, String.Index, A> { source, index in
+            if let (res, i) = trie.contains(source, index) {
+                return .success(result: res, source: source, resultIndex: i)
+            } else {
+                return .failure(error)
+            }
+        }
+    }
+
+
+
     public static let ascii = charPred { $0.isASCII }
 
     // MARK: - numbers
