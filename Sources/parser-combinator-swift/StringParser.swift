@@ -122,36 +122,7 @@ public enum StringParser {
 
     public static func stringIn(_ xs: [String]) -> Parser<String, String.Index, String> { return stringIn(Set(xs)) }
 
-    // TODO: Replace with one using trie
     public static func stringIn(_ xs: Set<String>) -> Parser<String, String.Index, String> {
-        let error = GenericParseError(message: "Did not match stringIn(\(xs).")
-        let dict = Dictionary(grouping: xs) { s in
-            s.count
-        }
-        let sets: [(Int, Set<String>)] = Array(dict).sorted {
-            $0.key < $1.key
-        }.map { k, v in
-            (k, Set(v))
-        }
-
-        return Parser<String, String.Index, String> { source, index in
-            var subStr: Substring?
-            let found = sets.first { len, set in
-                guard let end = source.index(index, offsetBy: len, limitedBy: source.endIndex) else {
-                    return false
-                }
-                subStr = source[index ..< end] // TODO: improve performance
-                return set.contains(String(subStr!))
-            }
-            if let (len, _) = found {
-                return .success(result: String(subStr!), source: source, resultIndex: source.index(index, offsetBy: len))
-            } else {
-                return .failure(error)
-            }
-        }
-    }
-
-    public static func trieStringIn(_ xs: Set<String>) -> Parser<String, String.Index, String> {
         let error = GenericParseError(message: "Did not match stringIn(\(xs)).")
         let trie = Trie<Character, String>()
         xs.forEach { trie.insert(Array($0), $0) }
