@@ -38,9 +38,9 @@ public enum StringParser {
     }
 
     /// Parses one Character from a given String
-    public static let one = Parser<String, String.Index, Character> { source, Index in
-        if Index < source.endIndex {
-            return .success(result: source[Index], source: source, resultIndex: source.index(after: Index))
+    public static let one = Parser<String, String.Index, Character> { source, index in
+        if index < source.endIndex {
+            return .success(result: source[index], source: source, resultIndex: source.index(after: index))
         } else {
             return .failure(Errors.noMoreSource)
         }
