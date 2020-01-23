@@ -131,6 +131,28 @@ public enum UTF16Parser {
         charWhilePred({ set.contains($0) }, min: min, max: max)
     }
 
+    public static func stringWhilePred(_ length: Int, _ f: @escaping (String.UTF16View.SubSequence) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF16View, String.UTF16View.Index, String> {
+        Parser<String.UTF16View, String.UTF16View.Index, String> { source, index in
+            var count = 0
+            var start: String.UTF16View.Index = index
+            guard var end: String.UTF16View.Index = source.index(index, offsetBy: length, limitedBy: source.endIndex) else {
+                return .failure(Errors.noMoreSource)
+            }
+            var buffer: [String.UTF16View.Element] = []
+            loop: while max == nil || count < max!, start < source.endIndex, end < source.endIndex, f(source[start ..< end]) {
+                buffer.append(source[start])
+                count += 1
+                start = source.index(after: start)
+                end = source.index(after: end)
+            }
+            if count >= min {
+                return .success(result: String(utf16CodeUnits: buffer, count: buffer.count), source: source, resultIndex: start)
+            } else {
+                return .failure(Errors.expectedAtLeast(min, got: count))
+            }
+        }
+    }
+
     public static func stringIn(_ xs: String...) -> Parser<String.UTF16View, String.UTF16View.Index, String> { stringIn(Set(xs)) }
 
     public static func stringIn(_ xs: [String]) -> Parser<String.UTF16View, String.UTF16View.Index, String> { stringIn(Set(xs)) }
