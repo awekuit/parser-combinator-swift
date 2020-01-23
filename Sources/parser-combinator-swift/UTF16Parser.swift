@@ -43,6 +43,19 @@ public enum UTF16Parser {
         }
     }
 
+    public static let char = Parser<String.UTF16View, String.UTF16View.Index, Character> { source, index in
+        guard index < source.endIndex else {
+            return .failure(Errors.noMoreSource)
+        }
+        if UTF16.isSurrogate(source[index]) {
+            let resultIndex = source.index(index, offsetBy: 2)
+            return .success(result: Character(String(source[index ..< resultIndex])!), source: source, resultIndex: resultIndex)
+        } else {
+            let resultIndex = source.index(after: index)
+            return .success(result: Character(String(utf16CodeUnits: [source[index]], count: 1)), source: source, resultIndex: resultIndex)
+        }
+    }
+
     public static func charPred(_ f: @escaping (String.UTF16View.Element) -> Bool) -> Parser<String.UTF16View, String.UTF16View.Index, String> {
         Parser<String.UTF16View, String.UTF16View.Index, String> { source, index in
             if index >= source.endIndex {
