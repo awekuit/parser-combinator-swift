@@ -8,7 +8,7 @@ public enum StringParser {
     /// - Parameter string: the String which should be parsed
     /// - Returns: a parser that parses that String
     public static func string(_ string: String) -> Parser<String, String.Index, String> {
-        return Parser<String, String.Index, String> { source, index in
+        Parser<String, String.Index, String> { source, index in
             var i = index
             for c in string {
                 if i >= source.endIndex {
@@ -24,7 +24,7 @@ public enum StringParser {
     }
 
     public static func char(_ char: Character) -> Parser<String, String.Index, Character> {
-        return Parser<String, String.Index, Character> { source, index in
+        Parser<String, String.Index, Character> { source, index in
             guard index < source.endIndex else {
                 return .failure(Errors.noMoreSource)
             }
@@ -51,7 +51,7 @@ public enum StringParser {
     /// - Parameter length: the length the string should have
     /// - Returns: a parser that parses a string with exactly the given length
     public static func string(length: Int) -> Parser<String, String.Index, String> {
-        return Parser<String, String.Index, String> { source, index in
+        Parser<String, String.Index, String> { source, index in
             guard let endIndex = source.index(index, offsetBy: length, limitedBy: source.endIndex) else {
                 return .failure(Errors.noMoreSource)
             }
@@ -76,7 +76,7 @@ public enum StringParser {
     }
 
     public static func charWhilePred(_ f: @escaping (Character) -> Bool, min: Int, max: Int? = nil) -> Parser<String, String.Index, [Character]> {
-        return Parser<String, String.Index, [Character]> { source, index in
+        Parser<String, String.Index, [Character]> { source, index in
             var count = 0
             var i = index
             loop: while max == nil || count < max!, i < source.endIndex, f(source[i]) {
@@ -91,36 +91,36 @@ public enum StringParser {
         }
     }
 
-    public static func charIn(_ chars: String) -> Parser<String, String.Index, Character> { return charIn(Array(chars)) }
+    public static func charIn(_ chars: String) -> Parser<String, String.Index, Character> { charIn(Array(chars)) }
 
-    public static func charIn(_ chars: Character...) -> Parser<String, String.Index, Character> { return charIn(Set(chars)) }
+    public static func charIn(_ chars: Character...) -> Parser<String, String.Index, Character> { charIn(Set(chars)) }
 
-    public static func charIn(_ chars: [Character]) -> Parser<String, String.Index, Character> { return charIn(Set(chars)) }
+    public static func charIn(_ chars: [Character]) -> Parser<String, String.Index, Character> { charIn(Set(chars)) }
 
     public static func charIn(_ chars: Set<Character>) -> Parser<String, String.Index, Character> {
-        return charPred { chars.contains($0) }
+        charPred { chars.contains($0) }
     }
 
     // TODO: Deprecated if performance is worse than `charIn(_ set: Set<Character>)`
     public static func charIn(_ charset: CharacterSet) -> Parser<String, String.Index, Character> {
-        return charPred { charset.contains($0.unicodeScalars[$0.unicodeScalars.startIndex]) }
+        charPred { charset.contains($0.unicodeScalars[$0.unicodeScalars.startIndex]) }
     }
 
     public static func charsWhileIn(_ chars: String, min: Int, max: Int? = nil) -> Parser<String, String.Index, String> {
-        return charsWhileIn(Array(chars), min: min, max: max).map { String($0) }
+        charsWhileIn(Array(chars), min: min, max: max).map { String($0) }
     }
 
     public static func charsWhileIn(_ chars: [Character], min: Int, max: Int? = nil) -> Parser<String, String.Index, String> {
-        return charsWhileIn(Set(chars), min: min, max: max).map { String($0) }
+        charsWhileIn(Set(chars), min: min, max: max).map { String($0) }
     }
 
     public static func charsWhileIn(_ set: Set<Character>, min: Int, max: Int? = nil) -> Parser<String, String.Index, String> {
-        return charWhilePred({ set.contains($0) }, min: min, max: max).map { String($0) }
+        charWhilePred({ set.contains($0) }, min: min, max: max).map { String($0) }
     }
 
-    public static func stringIn(_ xs: String...) -> Parser<String, String.Index, String> { return stringIn(Set(xs)) }
+    public static func stringIn(_ xs: String...) -> Parser<String, String.Index, String> { stringIn(Set(xs)) }
 
-    public static func stringIn(_ xs: [String]) -> Parser<String, String.Index, String> { return stringIn(Set(xs)) }
+    public static func stringIn(_ xs: [String]) -> Parser<String, String.Index, String> { stringIn(Set(xs)) }
 
     public static func stringIn(_ xs: Set<String>) -> Parser<String, String.Index, String> {
         let error = GenericParseError(message: "Did not match stringIn(\(xs)).")
@@ -136,7 +136,7 @@ public enum StringParser {
         }
     }
 
-    public static func dictionaryIn<A>(_ dict: Dictionary<String, A>) -> Parser<String, String.Index, A> {
+    public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<String, String.Index, A> {
         let error = GenericParseError(message: "Did not match dictionaryIn(\(dict)).")
         let trie = Trie<Character, A>()
         dict.forEach { k, v in trie.insert(Array(k), v) }
@@ -149,8 +149,6 @@ public enum StringParser {
             }
         }
     }
-
-
 
     public static let ascii = charPred { $0.isASCII }
 
@@ -196,7 +194,7 @@ public enum StringParser {
 
 extension Parser where Source == String, Index == String.Index {
     public func log(_ name: String, _ offset: Int = 20) -> Parser<String, String.Index, Result> {
-        return Parser<Source, Index, Result> { source, index in
+        Parser<Source, Index, Result> { source, index in
             let result = try self.parse(source, index)
             let idx: String.Index
             let resStr: String

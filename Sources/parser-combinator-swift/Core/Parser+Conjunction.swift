@@ -1,6 +1,6 @@
 extension Parser {
-    public var typeErased: Parser<Source, Index, ()> {
-        return Parser<Source, Index, ()> { source, index in
+    public var typeErased: Parser<Source, Index, Void> {
+        Parser<Source, Index, Void> { source, index in
             switch try self.parse(source, index) {
             case let .success(_, _, resultIndex):
                 return .success(result: (), source: source, resultIndex: resultIndex)
@@ -11,11 +11,11 @@ extension Parser {
     }
 
     public var optional: Parser<Source, Index, Result?> {
-        return (map { $0 }) | Parser.just(nil)
+        (map { $0 }) | Parser.just(nil)
     }
 
     public func or(_ other: @escaping @autoclosure () throws -> Parser<Source, Index, Result>) -> Parser<Source, Index, Result> {
-        return Parser { source, index in
+        Parser { source, index in
             let result = try self.parse(source, index)
             switch result {
             case .failure:
@@ -27,7 +27,7 @@ extension Parser {
     }
 
     public func rep(_ min: Int, _ max: Int? = nil) -> Parser<Source, Index, [Result]> {
-        return Parser<Source, Index, [Result]> { source, index in
+        Parser<Source, Index, [Result]> { source, index in
             var results = [Result]()
             var i = index
             var count = 0
@@ -52,7 +52,7 @@ extension Parser {
     }
 
     public func rep1sep<R2>(sep: Parser<Source, Index, R2>) -> Parser<Source, Index, [Result]> {
-        return (self ~ (sep ~> self).rep(0)).map { head, tail in
+        (self ~ (sep ~> self).rep(0)).map { head, tail in
             var result = [Result]()
             result += [head]
             result += tail
@@ -60,8 +60,8 @@ extension Parser {
         }
     }
 
-    public var positiveLookahead: Parser<Source, Index, ()> {
-        return Parser<Source, Index, ()> { source, index in
+    public var positiveLookahead: Parser<Source, Index, Void> {
+        Parser<Source, Index, Void> { source, index in
             let r = try self.parse(source, index)
             switch r {
             case .success: return .success(result: (), source: source, resultIndex: index)
@@ -70,8 +70,8 @@ extension Parser {
         }
     }
 
-    public var negativeLookahead: Parser<Source, Index, ()> {
-        return Parser<Source, Index, ()> { source, index in
+    public var negativeLookahead: Parser<Source, Index, Void> {
+        Parser<Source, Index, Void> { source, index in
             switch try self.parse(source, index) {
             case .success:
                 return .failure(Errors.negativeLookaheadFailed)

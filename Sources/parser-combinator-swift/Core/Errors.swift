@@ -60,6 +60,6 @@ public struct GenericParseError: ParseError, Equatable {
     ///   - rhs: the second error to compare with
     /// - Returns: true if both messages are equal, false otherwise
     public static func == (lhs: GenericParseError, rhs: GenericParseError) -> Bool {
-        return lhs.message == rhs.message
+        lhs.message == rhs.message
     }
 }

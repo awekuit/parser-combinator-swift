@@ -19,7 +19,7 @@ public class TrieNode<T: Hashable, O> {
     var children: [T: TrieNode] = [:]
     var isTerminating = false
     var isLeaf: Bool {
-        return children.count == 0
+        children.count == 0
     }
 
     /// Initializes a node.
@@ -51,12 +51,12 @@ public class Trie<T: Hashable, O> {
 
     /// The number of words in the trie
     public var count: Int {
-        return wordCount
+        wordCount
     }
 
     /// Is the trie empty?
     public var isEmpty: Bool {
-        return wordCount == 0
+        wordCount == 0
     }
 
     /// Creates an empty trie.

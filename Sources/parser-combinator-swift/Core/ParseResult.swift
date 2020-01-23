@@ -69,7 +69,7 @@ public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Inde
     /// - Parameter fallback: the fallback value to use if parse failed
     /// - Returns: either the parse result or fallback
     public func unwrap(fallback: @autoclosure () -> Result) -> Result {
-        return (try? unwrap()) ?? fallback()
+        (try? unwrap()) ?? fallback()
     }
 
     /// Returns the rest of the parsing operation in success case.

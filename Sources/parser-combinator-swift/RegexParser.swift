@@ -50,6 +50,6 @@ extension String {
     // swiftlint:disable identifier_name
     /// Returns a RegexParser with self as the pattern
     public var r: RegexParser {
-        return RegexParser(self)
+        RegexParser(self)
     }
 }
