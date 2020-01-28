@@ -153,7 +153,6 @@ public enum UTF16Parser {
 
     public static func stringIn(_ xs: [String]) -> Parser<String.UTF16View, String.UTF16View.Index, String> { stringIn(Set(xs)) }
 
-    // TODO: Replace with one using trie
     public static func stringIn(_ xs: Set<String>) -> Parser<String.UTF16View, String.UTF16View.Index, String> {
         let errorMessage = "Did not match stringIn(\(xs))."
         let trie = Trie<String.UTF16View.Element, String>()
