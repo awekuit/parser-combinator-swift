@@ -1,6 +1,5 @@
 import Foundation
 import Nimble
-@testable import parser_combinator_swift
 import ParserCombinatorSwift
 import Quick
 
