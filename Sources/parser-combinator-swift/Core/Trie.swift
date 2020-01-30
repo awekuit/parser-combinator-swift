@@ -147,3 +147,23 @@ extension Trie where T == String.UTF8View.Element {
         return nil
     }
 }
+
+extension Trie where T == CChar {
+    public func contains(_ source: ContiguousArray<CChar>, _ index: Int) -> (O, Int)? {
+        var i: Int = index
+        var currentNode = root
+        loop: while i < source.endIndex {
+            let elem = source[i]
+            i += 1
+            if let childNode = currentNode.children[elem] {
+                currentNode = childNode
+                if currentNode.isTerminating {
+                    return (currentNode.original!, i)
+                }
+            } else {
+                return nil
+            }
+        }
+        return nil
+    }
+}
