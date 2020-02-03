@@ -47,8 +47,7 @@ public enum UTF8CStringParser {
         guard index < source.endIndexWithoutTerminator else {
             return .failure(Errors.noMoreSource)
         }
-        var buffer: ContiguousArray<CChar> = ContiguousArray<CChar>()
-        buffer.append(source[index])
+        var buffer = ContiguousArray<CChar>(arrayLiteral: source[index])
         var i = index + 1
         loop: while i < source.endIndexWithoutTerminator, UTF8.isContinuation(UInt8(bitPattern: source[i])) {
             buffer.append(source[i])
@@ -66,9 +65,7 @@ public enum UTF8CStringParser {
             }
             let c = source[index]
             if f(c) {
-                var buffer: ContiguousArray<CChar> = ContiguousArray<CChar>()
-                buffer.append(c)
-                buffer.append(0) // NULL Terminated
+                let buffer = ContiguousArray<CChar>(arrayLiteral: c, 0) // 0 is NULL Terminated
                 return .success(result: String(cCharArray: buffer), source: source, resultIndex: index + 1)
             } else {
                 return .failure(GenericParseError(message: "[WIP]")) // TODO:
@@ -80,7 +77,7 @@ public enum UTF8CStringParser {
         Parser<ContiguousArray<CChar>, Int, String> { source, index in
             var count = 0
             var i = index
-            var buffer: ContiguousArray<CChar> = ContiguousArray<CChar>()
+            var buffer = ContiguousArray<CChar>()
             loop: while max == nil || count < max!, i < source.endIndexWithoutTerminator, f(source[i]) {
                 buffer.append(source[i])
                 count += 1
