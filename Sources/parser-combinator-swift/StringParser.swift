@@ -195,7 +195,7 @@ public enum StringParser {
 extension Parser where Source == String, Index == String.Index {
     public func log(_ name: String, _ offset: Int = 20) -> Parser<String, String.Index, Result> {
         Parser<Source, Index, Result> { source, index in
-            let result = try self.parse(source, index)
+            let result = try self.parse(&source, index)
             let idx: String.Index
             let resStr: String
             switch result {

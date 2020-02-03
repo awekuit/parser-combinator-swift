@@ -1,7 +1,7 @@
 extension Parser {
     public var typeErased: Parser<Source, Index, Void> {
         Parser<Source, Index, Void> { source, index in
-            switch try self.parse(source, index) {
+            switch try self.parse(&source, index) {
             case let .success(_, _, resultIndex):
                 return .success(result: (), source: source, resultIndex: resultIndex)
             case let .failure(err):
@@ -16,10 +16,10 @@ extension Parser {
 
     public func or(_ other: @escaping @autoclosure () throws -> Parser<Source, Index, Result>) -> Parser<Source, Index, Result> {
         Parser { source, index in
-            let result = try self.parse(source, index)
+            let result = try self.parse(&source, index)
             switch result {
             case .failure:
-                return try other().parse(source, index)
+                return try other().parse(&source, index)
             default:
                 return result
             }
@@ -33,7 +33,7 @@ extension Parser {
             var count = 0
 
             loop: while max == nil || count < max! {
-                switch try self.parse(source, i) {
+                switch try self.parse(&source, i) {
                 case let .success(result, _, resultIndex):
                     results.append(result)
                     i = resultIndex
@@ -62,7 +62,7 @@ extension Parser {
 
     public var positiveLookahead: Parser<Source, Index, Void> {
         Parser<Source, Index, Void> { source, index in
-            let r = try self.parse(source, index)
+            let r = try self.parse(&source, index)
             switch r {
             case .success: return .success(result: (), source: source, resultIndex: index)
             case .failure: return .failure(Errors.positiveLookaheadFailed)
@@ -72,7 +72,7 @@ extension Parser {
 
     public var negativeLookahead: Parser<Source, Index, Void> {
         Parser<Source, Index, Void> { source, index in
-            switch try self.parse(source, index) {
+            switch try self.parse(&source, index) {
             case .success:
                 return .failure(Errors.negativeLookaheadFailed)
             case .failure:

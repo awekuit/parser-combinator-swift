@@ -2,7 +2,7 @@ import Foundation
 
 public class Parser<Source, Index, Result> {
     /// ParseFunction is the type of the wrapped function type
-    public typealias ParseFunction = (Source, Index) throws -> ParseResult<Source, Index, Result>
+    public typealias ParseFunction = (inout Source, Index) throws -> ParseResult<Source, Index, Result>
 
     /// The wrapped function, call to start the parsing process.
     private let parseFunction: ParseFunction
@@ -18,8 +18,8 @@ public class Parser<Source, Index, Result> {
     ///
     /// - Parameter input: the token sequence that should be parsed
     /// - Returns: the result of the parsing operation
-    public func parse(_ source: Source, _ index: Index) throws -> ParseResult<Source, Index, Result> {
-        try parseFunction(source, index)
+    public func parse(_ source: inout Source, _ index: Index) throws -> ParseResult<Source, Index, Result> {
+        try parseFunction(&source, index)
     }
 
     /// just creates a parser that parses the given value as success
@@ -53,9 +53,9 @@ public class Parser<Source, Index, Result> {
     /// - Parameter tranform: function that maps a parse result to a new parser
     /// - Returns: a new parser that combines both parse operations.
     public func flatMap<B>(_ tranform: @escaping (Result) throws -> Parser<Source, Index, B>) -> Parser<Source, Index, B> {
-        Parser<Source, Index, B> { source1, index1 in
-            try self.parse(source1, index1).flatMap { result, source2, index2 in
-                try tranform(result).parse(source2, index2)
+        Parser<Source, Index, B> { source, index1 in
+            try self.parse(&source, index1).flatMap { result, _, index2 in
+                try tranform(result).parse(&source, index2)
             }
         }
     }
@@ -66,7 +66,7 @@ public class Parser<Source, Index, Result> {
     /// - Returns: a new parser that calls f on each successful parsing operation
     public func map<B>(_ transform: @escaping (Result) throws -> B) -> Parser<Source, Index, B> {
         Parser<Source, Index, B> { source1, index1 in
-            try self.parse(source1, index1).map { result, _, _ in
+            try self.parse(&source1, index1).map { result, _, _ in
                 try transform(result)
             }
         }
@@ -74,7 +74,7 @@ public class Parser<Source, Index, Result> {
 
     public func filter(_ pred: @escaping (Result) -> Bool) -> Parser<Source, Index, Result> {
         Parser<Source, Index, Result> { source, Index in
-            let r1 = try self.parse(source, Index)
+            let r1 = try self.parse(&source, Index)
             switch r1 {
             case let .success(result, _, _) where pred(result):
                 return r1
@@ -91,6 +91,6 @@ public class Parser<Source, Index, Result> {
     }
 
     public static func rule<A>(_ p: @escaping @autoclosure () throws -> Parser<Source, Index, A>) -> Parser<Source, Index, A> {
-        Parser<Source, Index, A> { source, index in try p().parse(source, index) }
+        Parser<Source, Index, A> { source, index in try p().parse(&source, index) }
     }
 }
