@@ -47,13 +47,13 @@ public enum UTF8Parser {
         guard index < source.endIndex else {
             return .failure(Errors.noMoreSource)
         }
-        var buffer: [String.UTF8View.Element] = [source[index]]
+        var buffer = ContiguousArray(arrayLiteral: source[index])
         var i = source.index(after: index)
         loop: while i < source.endIndex, UTF8.isContinuation(source[i]) {
             buffer.append(source[i])
             i = source.index(after: i)
         }
-        if let result = String(bytes: buffer, encoding: .utf8) {
+        if let result = String(buffer) {
             return .success(result: Character(result), source: source, resultIndex: i)
         } else {
             return .failure(GenericParseError(message: "UTF8View to String encoding failed."))
@@ -82,14 +82,14 @@ public enum UTF8Parser {
         Parser<String.UTF8View, String.UTF8View.Index, String> { source, index in
             var count = 0
             var i = index
-            var buffer: [String.UTF8View.Element] = []
+            var buffer = ContiguousArray<String.UTF8View.Element>()
             loop: while max == nil || count < max!, i < source.endIndex, f(source[i]) {
                 buffer.append(source[i])
                 count += 1
                 i = source.index(after: i)
             }
             if count >= min {
-                if let result = String(bytes: buffer, encoding: .utf8) {
+                if let result = String(buffer) {
                     return .success(result: result, source: source, resultIndex: i)
                 } else {
                     return .failure(GenericParseError(message: "UTF8View to String encoding failed."))
@@ -213,5 +213,15 @@ public enum UTF8Parser {
         } else {
             return .failure(Errors.notTheEnd)
         }
+    }
+}
+
+extension String {
+    init?(_ arr: [String.UTF8View.Element]) {
+        self.init(bytes: arr, encoding: .utf8)
+    }
+
+    init? (_ arr: ContiguousArray<String.UTF8View.Element>) {
+        self.init(bytes: Array(arr), encoding: .utf8)
     }
 }

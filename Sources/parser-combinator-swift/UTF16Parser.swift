@@ -74,14 +74,14 @@ public enum UTF16Parser {
         Parser<String.UTF16View, String.UTF16View.Index, String> { source, index in
             var count = 0
             var i = index
-            var buffer: [String.UTF16View.Element] = []
+            var buffer = ContiguousArray<String.UTF16View.Element>()
             loop: while max == nil || count < max!, i < source.endIndex, f(source[i]) {
                 buffer.append(source[i])
                 count += 1
                 i = source.index(after: i)
             }
             if count >= min {
-                return .success(result: String(utf16CodeUnits: buffer, count: buffer.count), source: source, resultIndex: i)
+                return .success(result: String(buffer), source: source, resultIndex: i)
             } else {
                 return .failure(Errors.expectedAtLeast(min, got: count))
             }
@@ -134,7 +134,7 @@ public enum UTF16Parser {
             guard var end: String.UTF16View.Index = source.index(index, offsetBy: length, limitedBy: source.endIndex) else {
                 return .failure(Errors.noMoreSource)
             }
-            var buffer: [String.UTF16View.Element] = []
+            var buffer = ContiguousArray<String.UTF16View.Element>()
             loop: while max == nil || count < max!, start < source.endIndex, end < source.endIndex, f(source[start ..< end]) {
                 buffer.append(source[start])
                 count += 1
@@ -142,7 +142,7 @@ public enum UTF16Parser {
                 end = source.index(after: end)
             }
             if count >= min {
-                return .success(result: String(utf16CodeUnits: buffer, count: buffer.count), source: source, resultIndex: start)
+                return .success(result: String(buffer), source: source, resultIndex: start)
             } else {
                 return .failure(Errors.expectedAtLeast(min, got: count))
             }
@@ -226,5 +226,15 @@ public enum UTF16Parser {
         } else {
             return .failure(Errors.notTheEnd)
         }
+    }
+}
+
+extension String {
+    init(_ arr: [String.UTF16View.Element]) {
+        self.init(utf16CodeUnits: arr, count: arr.count)
+    }
+
+    init(_ arr: ContiguousArray<String.UTF16View.Element>) {
+        self.init(utf16CodeUnits: Array(arr), count: arr.count)
     }
 }

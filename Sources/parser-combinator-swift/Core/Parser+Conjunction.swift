@@ -28,7 +28,7 @@ extension Parser {
 
     public func rep(_ min: Int, _ max: Int? = nil) -> Parser<Source, Index, [Result]> {
         Parser<Source, Index, [Result]> { source, index in
-            var results = [Result]()
+            var results = ContiguousArray<Result>()
             var i = index
             var count = 0
 
@@ -44,7 +44,7 @@ extension Parser {
             }
 
             if count >= min {
-                return .success(result: results, source: source, resultIndex: i)
+                return .success(result: Array(results), source: source, resultIndex: i)
             } else {
                 return .failure(Errors.repeatFailed(min: min, max: max, count: count))
             }
@@ -53,10 +53,10 @@ extension Parser {
 
     public func rep1sep<R2>(sep: Parser<Source, Index, R2>) -> Parser<Source, Index, [Result]> {
         (self ~ (sep ~> self).rep(0)).map { head, tail in
-            var result = [Result]()
+            var result = ContiguousArray<Result>()
             result += [head]
             result += tail
-            return result
+            return Array(result)
         }
     }
 
