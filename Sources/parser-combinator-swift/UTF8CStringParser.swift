@@ -9,64 +9,64 @@ public enum UTF8CStringParser {
     /// - Returns: a parser that parses that String
     public static func string(_ string: String) -> Parser<ContiguousArray<CChar>, String> {
         let cs = string.utf8CString.dropLast() // FIXME: 添字アクセスで制限した方が速いかも。比較する
-        return Parser<ContiguousArray<CChar>, String> { source, index in
+        return Parser<ContiguousArray<CChar>, String> { input, index in
             var i = index
             for c in cs {
-                guard i < source.endIndexWithoutTerminator else {
+                guard i < input.endIndexWithoutTerminator else {
                     return .failure(Errors.noMoreSource)
                 }
-                guard c == source[i] else {
-                    return .failure(GenericErrors.unexpectedToken(expected: c, got: source[i]))
+                guard c == input[i] else {
+                    return .failure(GenericErrors.unexpectedToken(expected: c, got: input[i]))
                 }
                 i += 1
             }
-            return .success(result: string, source: source, next: i)
+            return .success(output: string, input: input, next: i)
         }
     }
 
     public static func elem(_ elem: CChar) -> Parser<ContiguousArray<CChar>, CChar> {
-        Parser<ContiguousArray<CChar>, CChar> { source, index in
-            let c = source[index]
+        Parser<ContiguousArray<CChar>, CChar> { input, index in
+            let c = input[index]
             if c == elem {
-                return .success(result: elem, source: source, next: index + 1)
+                return .success(output: elem, input: input, next: index + 1)
             } else {
                 return .failure(GenericErrors.unexpectedToken(expected: elem, got: c))
             }
         }
     }
 
-    public static let one = Parser<ContiguousArray<CChar>, CChar> { source, index in
-        if index < source.endIndexWithoutTerminator {
-            return .success(result: source[index], source: source, next: index + 1)
+    public static let one = Parser<ContiguousArray<CChar>, CChar> { input, index in
+        if index < input.endIndexWithoutTerminator {
+            return .success(output: input[index], input: input, next: index + 1)
         } else {
             return .failure(Errors.noMoreSource)
         }
     }
 
-    public static let char = Parser<ContiguousArray<CChar>, Character> { source, index in
-        guard index < source.endIndexWithoutTerminator else {
+    public static let char = Parser<ContiguousArray<CChar>, Character> { input, index in
+        guard index < input.endIndexWithoutTerminator else {
             return .failure(Errors.noMoreSource)
         }
-        var buffer = ContiguousArray<CChar>(arrayLiteral: source[index])
+        var buffer = ContiguousArray<CChar>(arrayLiteral: input[index])
         var i = index + 1
-        loop: while i < source.endIndexWithoutTerminator, UTF8.isContinuation(UInt8(bitPattern: source[i])) {
-            buffer.append(source[i])
+        loop: while i < input.endIndexWithoutTerminator, UTF8.isContinuation(UInt8(bitPattern: input[i])) {
+            buffer.append(input[i])
             i += 1
         }
         buffer.append(0) // NULL Terminated
-        var result = String(cCharArray: buffer)
-        return .success(result: Character(result), source: source, next: i)
+        var output = String(cCharArray: buffer)
+        return .success(output: Character(output), input: input, next: i)
     }
 
     public static func elemPred(_ f: @escaping (CChar) -> Bool) -> Parser<ContiguousArray<CChar>, String> {
-        Parser<ContiguousArray<CChar>, String> { source, index in
-            if index >= source.endIndexWithoutTerminator {
+        Parser<ContiguousArray<CChar>, String> { input, index in
+            if index >= input.endIndexWithoutTerminator {
                 return .failure(Errors.noMoreSource)
             }
-            let c = source[index]
+            let c = input[index]
             if f(c) {
                 let buffer = ContiguousArray<CChar>(arrayLiteral: c, 0) // 0 is NULL Terminated
-                return .success(result: String(cCharArray: buffer), source: source, next: index + 1)
+                return .success(output: String(cCharArray: buffer), input: input, next: index + 1)
             } else {
                 return .failure(GenericParseError(message: "[WIP]")) // TODO:
             }
@@ -74,18 +74,18 @@ public enum UTF8CStringParser {
     }
 
     public static func elemWhilePred(_ f: @escaping (CChar) -> Bool, min: Int, max: Int? = nil) -> Parser<ContiguousArray<CChar>, String> {
-        Parser<ContiguousArray<CChar>, String> { source, index in
+        Parser<ContiguousArray<CChar>, String> { input, index in
             var count = 0
             var i = index
             var buffer = ContiguousArray<CChar>()
-            loop: while max == nil || count < max!, i < source.endIndexWithoutTerminator, f(source[i]) {
-                buffer.append(source[i])
+            loop: while max == nil || count < max!, i < input.endIndexWithoutTerminator, f(input[i]) {
+                buffer.append(input[i])
                 count += 1
                 i += 1
             }
             buffer.append(0) // NULL Terminated
             if count >= min {
-                return .success(result: String(cCharArray: buffer), source: source, next: i)
+                return .success(output: String(cCharArray: buffer), input: input, next: i)
             } else {
                 return .failure(Errors.expectedAtLeast(min, got: count))
             }
@@ -151,12 +151,12 @@ public enum UTF8CStringParser {
         let trie = Trie<CChar, String>()
         xs.forEach { trie.insert(Array($0.utf8CString).dropLast(), $0) }
 
-        return Parser<ContiguousArray<CChar>, String> { source, index in
+        return Parser<ContiguousArray<CChar>, String> { input, index in
             var i: Int = index
             var currentNode = trie.root
             var matched = false // FIXME: Remove this var if that is possible.
-            loop: while i < source.endIndexWithoutTerminator {
-                let elem = source[i]
+            loop: while i < input.endIndexWithoutTerminator {
+                let elem = input[i]
                 i += 1
                 if let childNode = currentNode.children[elem] {
                     currentNode = childNode
@@ -169,7 +169,7 @@ public enum UTF8CStringParser {
                 }
             }
             if matched {
-                return .success(result: currentNode.original!, source: source, next: i)
+                return .success(output: currentNode.original!, input: input, next: i)
             } else {
                 return .failure(GenericParseError(message: errorMessage))
             }
@@ -181,9 +181,9 @@ public enum UTF8CStringParser {
         let trie = Trie<CChar, A>()
         dict.forEach { k, v in trie.insert(Array(k.utf8CString).dropLast(), v) }
 
-        return Parser<ContiguousArray<CChar>, A> { source, index in
-            if let (res, i) = trie.contains(source, index) {
-                return .success(result: res, source: source, next: i)
+        return Parser<ContiguousArray<CChar>, A> { input, index in
+            if let (res, i) = trie.contains(input, index) {
+                return .success(output: res, input: input, next: i)
             } else {
                 return .failure(error)
             }
@@ -205,17 +205,17 @@ public enum UTF8CStringParser {
 
     // MARK: - Common characters
 
-    public static let start: Parser<ContiguousArray<CChar>, String> = Parser<ContiguousArray<CChar>, String> { source, index in
+    public static let start: Parser<ContiguousArray<CChar>, String> = Parser<ContiguousArray<CChar>, String> { input, index in
         if index == 0 {
-            return .success(result: "", source: source, next: index)
+            return .success(output: "", input: input, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }
     }
 
-    public static let end: Parser<ContiguousArray<CChar>, String> = Parser<ContiguousArray<CChar>, String> { source, index in
-        if index == source.endIndexWithoutTerminator {
-            return .success(result: "", source: source, next: index)
+    public static let end: Parser<ContiguousArray<CChar>, String> = Parser<ContiguousArray<CChar>, String> { input, index in
+        if index == input.endIndexWithoutTerminator {
+            return .success(output: "", input: input, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }

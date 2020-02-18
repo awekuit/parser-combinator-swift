@@ -1,6 +1,6 @@
-public enum ParseResult<Source, Result> where Source: Collection { // where Source: Sequence, Index: Hashable {
+public enum ParseResult<Input, Output> where Input: Collection { // where Source: Sequence, Index: Hashable {
     /// Parse was successful.
-    case success(result: Result, source: Source, next: Source.Index)
+    case success(output: Output, input: Input, next: Input.Index)
 
     /// Parse was not successful.
     case failure(ParseError)
@@ -9,10 +9,10 @@ public enum ParseResult<Source, Result> where Source: Collection { // where Sour
     ///
     /// - Parameter transform: a function to use to transform result
     /// - Returns: ParseResult with transformed result or fail with unchanged error.
-    public func map<B>(_ transform: (Result, Source, Source.Index) throws -> B) throws -> ParseResult<Source, B> {
+    public func map<B>(_ transform: (Output, Input, Input.Index) throws -> B) throws -> ParseResult<Input, B> {
         switch self {
-        case let .success(result, source, nextIndex):
-            return .success(result: try transform(result, source, nextIndex), source: source, next: nextIndex)
+        case let .success(output, input, nextIndex):
+            return .success(output: try transform(output, input, nextIndex), input: input, next: nextIndex)
         case let .failure(err):
             return .failure(err)
         }
@@ -22,10 +22,10 @@ public enum ParseResult<Source, Result> where Source: Collection { // where Sour
     ///
     /// - Parameter transform: a function that takes a result and returns a parse result
     /// - Returns: the value that was produced by f if self was success or still fail if not
-    public func flatMap<B>(_ transform: (Result, Source, Source.Index) throws -> ParseResult<Source, B>) throws -> ParseResult<Source, B> {
+    public func flatMap<B>(_ transform: (Output, Input, Input.Index) throws -> ParseResult<Input, B>) throws -> ParseResult<Input, B> {
         switch self {
-        case let .success(result, source, nextIndex):
-            return try transform(result, source, nextIndex)
+        case let .success(output, input, nextIndex):
+            return try transform(output, input, nextIndex)
         case let .failure(err):
             return .failure(err)
         }
@@ -55,10 +55,10 @@ public enum ParseResult<Source, Result> where Source: Collection { // where Sour
     ///
     /// - Returns: the result if success
     /// - Throws: Errors.unwrappedFailedResult if not successful
-    public func unwrap() throws -> Result {
+    public func unwrap() throws -> Output {
         switch self {
-        case let .success(result, _, _):
-            return result
+        case let .success(output, _, _):
+            return output
         default:
             throw Errors.unwrappedFailedResult
         }
@@ -68,15 +68,11 @@ public enum ParseResult<Source, Result> where Source: Collection { // where Sour
     ///
     /// - Parameter fallback: the fallback value to use if parse failed
     /// - Returns: either the parse result or fallback
-    public func unwrap(fallback: @autoclosure () -> Result) -> Result {
+    public func unwrap(fallback: @autoclosure () -> Output) -> Output {
         (try? unwrap()) ?? fallback()
     }
 
-    /// Returns the rest of the parsing operation in success case.
-    ///
-    /// - Returns: the rest if successful
-    /// - Throws: Errors.unwrappedFailedResult if not successful
-    public func result() throws -> Source.Index {
+    public func index() throws -> Input.Index {
         switch self {
         case let .success(_, _, index):
             return index

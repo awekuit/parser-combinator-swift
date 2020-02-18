@@ -1,8 +1,8 @@
 import Foundation
 
-public class Parser<Source, Result> where Source: Collection {
+public class Parser<Input, Output> where Input: Collection {
     /// ParseFunction is the type of the wrapped function type
-    public typealias ParseFunction = (Source, Source.Index) throws -> ParseResult<Source, Result>
+    public typealias ParseFunction = (Input, Input.Index) throws -> ParseResult<Input, Output>
 
     /// The wrapped function, call to start the parsing process.
     private let parseFunction: ParseFunction
@@ -18,17 +18,17 @@ public class Parser<Source, Result> where Source: Collection {
     ///
     /// - Parameter input: the token sequence that should be parsed
     /// - Returns: the result of the parsing operation
-    public func parse(_ source: Source, _ index: Source.Index) throws -> ParseResult<Source, Result> {
-        try parseFunction(source, index)
+    public func parse(_ input: Input, _ index: Input.Index) throws -> ParseResult<Input, Output> {
+        try parseFunction(input, index)
     }
 
     /// just creates a parser that parses the given value as success
     ///
     /// - Parameter value: the result to produce
     /// - Returns: a parser that just produces this value as success
-    public static func just<B>(_ value: B) -> Parser<Source, B> {
-        Parser<Source, B> { tokens, index in
-            .success(result: value, source: tokens, next: index)
+    public static func just<B>(_ value: B) -> Parser<Input, B> {
+        Parser<Input, B> { tokens, index in
+            .success(output: value, input: tokens, next: index)
         }
     }
 
@@ -36,26 +36,26 @@ public class Parser<Source, Result> where Source: Collection {
     ///
     /// - Parameter err: the error that should be used to fail
     /// - Returns: a parser that always fails
-    public static func fail(error: ParseError) -> Parser<Source, Result> {
-        Parser<Source, Result> { _, _ in .failure(error) }
+    public static func fail(error: ParseError) -> Parser<Input, Output> {
+        Parser<Input, Output> { _, _ in .failure(error) }
     }
 
     /// Creates a parser that always fails with a GenericParseError.
     ///
     /// - Parameter message: the message to use for GenericParseError
     /// - Returns: a parser that always fails
-    public static func fail(message: String) -> Parser<Source, Result> {
-        Parser<Source, Result> { _, _ in .failure(GenericParseError(message: message)) }
+    public static func fail(message: String) -> Parser<Input, Output> {
+        Parser<Input, Output> { _, _ in .failure(GenericParseError(message: message)) }
     }
 
     /// Produce a new parser for every succeeded parsing process.
     ///
     /// - Parameter tranform: function that maps a parse result to a new parser
     /// - Returns: a new parser that combines both parse operations.
-    public func flatMap<B>(_ tranform: @escaping (Result) throws -> Parser<Source, B>) -> Parser<Source, B> {
-        Parser<Source, B> { source1, index1 in
-            try self.parse(source1, index1).flatMap { result, source2, index2 in
-                try tranform(result).parse(source2, index2)
+    public func flatMap<B>(_ tranform: @escaping (Output) throws -> Parser<Input, B>) -> Parser<Input, B> {
+        Parser<Input, B> { input1, index1 in
+            try self.parse(input1, index1).flatMap { output, input2, index2 in
+                try tranform(output).parse(input2, index2)
             }
         }
     }
@@ -64,19 +64,19 @@ public class Parser<Source, Result> where Source: Collection {
     ///
     /// - Parameter transform: transforming function that maps from R to B
     /// - Returns: a new parser that calls f on each successful parsing operation
-    public func map<B>(_ transform: @escaping (Result) throws -> B) -> Parser<Source, B> {
-        Parser<Source, B> { source1, index1 in
-            try self.parse(source1, index1).map { result, _, _ in
-                try transform(result)
+    public func map<B>(_ transform: @escaping (Output) throws -> B) -> Parser<Input, B> {
+        Parser<Input, B> { input, index in
+            try self.parse(input, index).map { output, _, _ in
+                try transform(output)
             }
         }
     }
 
-    public func filter(_ pred: @escaping (Result) -> Bool) -> Parser<Source, Result> {
-        Parser<Source, Result> { source, index in
-            let r1 = try self.parse(source, index)
+    public func filter(_ pred: @escaping (Output) -> Bool) -> Parser<Input, Output> {
+        Parser<Input, Output> { input, index in
+            let r1 = try self.parse(input, index)
             switch r1 {
-            case let .success(result, _, _) where pred(result):
+            case let .success(output, _, _) where pred(output):
                 return r1
             case .success:
                 return .failure(Errors.filtered)
@@ -86,11 +86,11 @@ public class Parser<Source, Result> where Source: Collection {
         }
     }
 
-    public static func passWith<A>(_ x: A) -> Parser<Source, A> {
+    public static func passWith<A>(_ x: A) -> Parser<Input, A> {
         Parser.just(x)
     }
 
-    public static func rule<A>(_ p: @escaping @autoclosure () throws -> Parser<Source, A>) -> Parser<Source, A> {
-        Parser<Source, A> { source, index in try p().parse(source, index) }
+    public static func rule<A>(_ p: @escaping @autoclosure () throws -> Parser<Input, A>) -> Parser<Input, A> {
+        Parser<Input, A> { input, index in try p().parse(input, index) }
     }
 }

@@ -29,11 +29,11 @@ public final class RegexParser: Parser<String, String> {
     public init(_ regex: String) {
         self.regex = regex
         let nsRegex = try? NSRegularExpression(pattern: regex, options: [])
-        super.init { source, index in
+        super.init { input, index in
             guard let nsRegex = nsRegex else {
                 return .failure(Error.invalidRegex(regex))
             }
-            let str = String(source[index...])
+            let str = String(input[index...])
             let matches = nsRegex.matches(in: str, options: [.anchored], range: NSRange(location: 0, length: str.count))
             guard let first = matches.first else {
                 return .failure(Error.doesNotMatch(pattern: regex, input: str))
@@ -41,7 +41,7 @@ public final class RegexParser: Parser<String, String> {
 
             let end = first.range.location + first.range.length
             let match = String(str.prefix(end))
-            return .success(result: match, source: source, next: source.index(index, offsetBy: end))
+            return .success(output: match, input: input, next: input.index(index, offsetBy: end))
         }
     }
 }
