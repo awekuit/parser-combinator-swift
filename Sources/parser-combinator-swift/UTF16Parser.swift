@@ -20,7 +20,7 @@ public enum UTF16Parser {
                 }
                 i = source.index(after: i)
             }
-            return .success(result: string, source: source, resultIndex: i)
+            return .success(result: string, source: source, next: i)
         }
     }
 
@@ -28,7 +28,7 @@ public enum UTF16Parser {
         Parser<String.UTF16View, String.UTF16View.Index, String.UTF16View.Element> { source, index in
             let e = source[index]
             if e == elem {
-                return .success(result: elem, source: source, resultIndex: source.index(after: index))
+                return .success(result: elem, source: source, next: source.index(after: index))
             } else {
                 return .failure(GenericErrors.unexpectedToken(expected: elem, got: e))
             }
@@ -37,7 +37,7 @@ public enum UTF16Parser {
 
     public static let one = Parser<String.UTF16View, String.UTF16View.Index, String.UTF16View.Element> { source, index in
         if index < source.endIndex {
-            return .success(result: source[index], source: source, resultIndex: source.index(after: index))
+            return .success(result: source[index], source: source, next: source.index(after: index))
         } else {
             return .failure(Errors.noMoreSource)
         }
@@ -48,11 +48,11 @@ public enum UTF16Parser {
             return .failure(Errors.noMoreSource)
         }
         if UTF16.isSurrogate(source[index]) {
-            let resultIndex = source.index(index, offsetBy: 2)
-            return .success(result: Character(String(source[index ..< resultIndex])!), source: source, resultIndex: resultIndex)
+            let nextIndex = source.index(index, offsetBy: 2)
+            return .success(result: Character(String(source[index ..< nextIndex])!), source: source, next: nextIndex)
         } else {
-            let resultIndex = source.index(after: index)
-            return .success(result: Character(String(utf16CodeUnits: [source[index]], count: 1)), source: source, resultIndex: resultIndex)
+            let nextIndex = source.index(after: index)
+            return .success(result: Character(String(utf16CodeUnits: [source[index]], count: 1)), source: source, next: nextIndex)
         }
     }
 
@@ -63,7 +63,7 @@ public enum UTF16Parser {
             }
             let c = source[index]
             if f(c) {
-                return .success(result: String(utf16CodeUnits: [c], count: 1), source: source, resultIndex: source.index(after: index))
+                return .success(result: String(utf16CodeUnits: [c], count: 1), source: source, next: source.index(after: index))
             } else {
                 return .failure(GenericParseError(message: "[WIP]")) // TODO:
             }
@@ -81,7 +81,7 @@ public enum UTF16Parser {
                 i = source.index(after: i)
             }
             if count >= min {
-                return .success(result: String(buffer), source: source, resultIndex: i)
+                return .success(result: String(buffer), source: source, next: i)
             } else {
                 return .failure(Errors.expectedAtLeast(min, got: count))
             }
@@ -142,7 +142,7 @@ public enum UTF16Parser {
                 end = source.index(after: end)
             }
             if count >= min {
-                return .success(result: String(buffer), source: source, resultIndex: start)
+                return .success(result: String(buffer), source: source, next: start)
             } else {
                 return .failure(Errors.expectedAtLeast(min, got: count))
             }
@@ -176,7 +176,7 @@ public enum UTF16Parser {
                 }
             }
             if matched {
-                return .success(result: currentNode.original!, source: source, resultIndex: i)
+                return .success(result: currentNode.original!, source: source, next: i)
             } else {
                 return .failure(GenericParseError(message: errorMessage))
             }
@@ -190,7 +190,7 @@ public enum UTF16Parser {
 
         return Parser<String.UTF16View, String.UTF16View.Index, A> { source, index in
             if let (res, i) = trie.contains(source, index) {
-                return .success(result: res, source: source, resultIndex: i)
+                return .success(result: res, source: source, next: i)
             } else {
                 return .failure(error)
             }
@@ -214,7 +214,7 @@ public enum UTF16Parser {
 
     public static let start: Parser<String.UTF16View, String.UTF16View.Index, String> = Parser<String.UTF16View, String.UTF16View.Index, String> { source, index in
         if index == source.startIndex {
-            return .success(result: "", source: source, resultIndex: index)
+            return .success(result: "", source: source, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }
@@ -222,7 +222,7 @@ public enum UTF16Parser {
 
     public static let end: Parser<String.UTF16View, String.UTF16View.Index, String> = Parser<String.UTF16View, String.UTF16View.Index, String> { source, index in
         if index == source.endIndex {
-            return .success(result: "", source: source, resultIndex: index)
+            return .success(result: "", source: source, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }

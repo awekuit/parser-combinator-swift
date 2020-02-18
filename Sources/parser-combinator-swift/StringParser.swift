@@ -19,7 +19,7 @@ public enum StringParser {
                 }
                 i = source.index(after: i)
             }
-            return .success(result: string, source: source, resultIndex: i)
+            return .success(result: string, source: source, next: i)
         }
     }
 
@@ -30,7 +30,7 @@ public enum StringParser {
             }
             let c = source[index]
             if c == char {
-                return .success(result: char, source: source, resultIndex: source.index(after: index))
+                return .success(result: char, source: source, next: source.index(after: index))
             } else {
                 return .failure(Errors.unexpectedCharacter(expected: char, got: c))
             }
@@ -40,7 +40,7 @@ public enum StringParser {
     /// Parses one Character from a given String
     public static let one = Parser<String, String.Index, Character> { source, index in
         if index < source.endIndex {
-            return .success(result: source[index], source: source, resultIndex: source.index(after: index))
+            return .success(result: source[index], source: source, next: source.index(after: index))
         } else {
             return .failure(Errors.noMoreSource)
         }
@@ -56,7 +56,7 @@ public enum StringParser {
                 return .failure(Errors.noMoreSource)
             }
             let result = source[index ..< endIndex]
-            return .success(result: String(result), source: source, resultIndex: endIndex)
+            return .success(result: String(result), source: source, next: endIndex)
         }
     }
 
@@ -68,7 +68,7 @@ public enum StringParser {
             }
             let c = source[index]
             if f(c) {
-                return .success(result: c, source: source, resultIndex: source.index(after: index))
+                return .success(result: c, source: source, next: source.index(after: index))
             } else {
                 return .failure(error)
             }
@@ -84,7 +84,7 @@ public enum StringParser {
                 i = source.index(after: i)
             }
             if count >= min {
-                return .success(result: Array(source[index ..< i]), source: source, resultIndex: i)
+                return .success(result: Array(source[index ..< i]), source: source, next: i)
             } else {
                 return .failure(Errors.expectedAtLeast(min, got: count))
             }
@@ -129,7 +129,7 @@ public enum StringParser {
 
         return Parser<String, String.Index, String> { source, index in
             if let (res, i) = trie.contains(source, index) {
-                return .success(result: res, source: source, resultIndex: i)
+                return .success(result: res, source: source, next: i)
             } else {
                 return .failure(error)
             }
@@ -143,7 +143,7 @@ public enum StringParser {
 
         return Parser<String, String.Index, A> { source, index in
             if let (res, i) = trie.contains(source, index) {
-                return .success(result: res, source: source, resultIndex: i)
+                return .success(result: res, source: source, next: i)
             } else {
                 return .failure(error)
             }
@@ -169,7 +169,7 @@ public enum StringParser {
 
     public static let start: Parser<String, String.Index, String> = Parser<String, String.Index, String> { source, index in
         if index == source.startIndex {
-            return .success(result: "", source: source, resultIndex: index)
+            return .success(result: "", source: source, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }
@@ -177,7 +177,7 @@ public enum StringParser {
 
     public static let end: Parser<String, String.Index, String> = Parser<String, String.Index, String> { source, index in
         if index == source.endIndex {
-            return .success(result: "", source: source, resultIndex: index)
+            return .success(result: "", source: source, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }

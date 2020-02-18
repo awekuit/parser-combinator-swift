@@ -20,7 +20,7 @@ public enum UTF8CStringParser {
                 }
                 i += 1
             }
-            return .success(result: string, source: source, resultIndex: i)
+            return .success(result: string, source: source, next: i)
         }
     }
 
@@ -28,7 +28,7 @@ public enum UTF8CStringParser {
         Parser<ContiguousArray<CChar>, Int, CChar> { source, index in
             let c = source[index]
             if c == elem {
-                return .success(result: elem, source: source, resultIndex: index + 1)
+                return .success(result: elem, source: source, next: index + 1)
             } else {
                 return .failure(GenericErrors.unexpectedToken(expected: elem, got: c))
             }
@@ -37,7 +37,7 @@ public enum UTF8CStringParser {
 
     public static let one = Parser<ContiguousArray<CChar>, Int, CChar> { source, index in
         if index < source.endIndexWithoutTerminator {
-            return .success(result: source[index], source: source, resultIndex: index + 1)
+            return .success(result: source[index], source: source, next: index + 1)
         } else {
             return .failure(Errors.noMoreSource)
         }
@@ -55,7 +55,7 @@ public enum UTF8CStringParser {
         }
         buffer.append(0) // NULL Terminated
         var result = String(cCharArray: buffer)
-        return .success(result: Character(result), source: source, resultIndex: i)
+        return .success(result: Character(result), source: source, next: i)
     }
 
     public static func elemPred(_ f: @escaping (CChar) -> Bool) -> Parser<ContiguousArray<CChar>, Int, String> {
@@ -66,7 +66,7 @@ public enum UTF8CStringParser {
             let c = source[index]
             if f(c) {
                 let buffer = ContiguousArray<CChar>(arrayLiteral: c, 0) // 0 is NULL Terminated
-                return .success(result: String(cCharArray: buffer), source: source, resultIndex: index + 1)
+                return .success(result: String(cCharArray: buffer), source: source, next: index + 1)
             } else {
                 return .failure(GenericParseError(message: "[WIP]")) // TODO:
             }
@@ -85,7 +85,7 @@ public enum UTF8CStringParser {
             }
             buffer.append(0) // NULL Terminated
             if count >= min {
-                return .success(result: String(cCharArray: buffer), source: source, resultIndex: i)
+                return .success(result: String(cCharArray: buffer), source: source, next: i)
             } else {
                 return .failure(Errors.expectedAtLeast(min, got: count))
             }
@@ -169,7 +169,7 @@ public enum UTF8CStringParser {
                 }
             }
             if matched {
-                return .success(result: currentNode.original!, source: source, resultIndex: i)
+                return .success(result: currentNode.original!, source: source, next: i)
             } else {
                 return .failure(GenericParseError(message: errorMessage))
             }
@@ -183,7 +183,7 @@ public enum UTF8CStringParser {
 
         return Parser<ContiguousArray<CChar>, Int, A> { source, index in
             if let (res, i) = trie.contains(source, index) {
-                return .success(result: res, source: source, resultIndex: i)
+                return .success(result: res, source: source, next: i)
             } else {
                 return .failure(error)
             }
@@ -207,7 +207,7 @@ public enum UTF8CStringParser {
 
     public static let start: Parser<ContiguousArray<CChar>, Int, String> = Parser<ContiguousArray<CChar>, Int, String> { source, index in
         if index == 0 {
-            return .success(result: "", source: source, resultIndex: index)
+            return .success(result: "", source: source, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }
@@ -215,7 +215,7 @@ public enum UTF8CStringParser {
 
     public static let end: Parser<ContiguousArray<CChar>, Int, String> = Parser<ContiguousArray<CChar>, Int, String> { source, index in
         if index == source.endIndexWithoutTerminator {
-            return .success(result: "", source: source, resultIndex: index)
+            return .success(result: "", source: source, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }

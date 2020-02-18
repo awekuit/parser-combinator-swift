@@ -41,7 +41,7 @@ public final class RegexParser: Parser<String, String.Index, String> {
 
             let end = first.range.location + first.range.length
             let match = String(str.prefix(end))
-            return .success(result: match, source: source, resultIndex: source.index(index, offsetBy: end))
+            return .success(result: match, source: source, next: source.index(index, offsetBy: end))
         }
     }
 }

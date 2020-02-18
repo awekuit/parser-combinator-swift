@@ -2,8 +2,8 @@ extension Parser {
     public var typeErased: Parser<Source, Index, Void> {
         Parser<Source, Index, Void> { source, index in
             switch try self.parse(source, index) {
-            case let .success(_, _, resultIndex):
-                return .success(result: (), source: source, resultIndex: resultIndex)
+            case let .success(_, _, nextIndex):
+                return .success(result: (), source: source, next: nextIndex)
             case let .failure(err):
                 return .failure(err)
             }
@@ -34,9 +34,9 @@ extension Parser {
 
             loop: while max == nil || count < max! {
                 switch try self.parse(source, i) {
-                case let .success(result, _, resultIndex):
+                case let .success(result, _, nextIndex):
                     results.append(result)
-                    i = resultIndex
+                    i = nextIndex
                     count += 1
                 case .failure:
                     break loop
@@ -44,7 +44,7 @@ extension Parser {
             }
 
             if count >= min {
-                return .success(result: Array(results), source: source, resultIndex: i)
+                return .success(result: Array(results), source: source, next: i)
             } else {
                 return .failure(Errors.repeatFailed(min: min, max: max, count: count))
             }
@@ -64,7 +64,7 @@ extension Parser {
         Parser<Source, Index, Void> { source, index in
             let r = try self.parse(source, index)
             switch r {
-            case .success: return .success(result: (), source: source, resultIndex: index)
+            case .success: return .success(result: (), source: source, next: index)
             case .failure: return .failure(Errors.positiveLookaheadFailed)
             }
         }
@@ -76,7 +76,7 @@ extension Parser {
             case .success:
                 return .failure(Errors.negativeLookaheadFailed)
             case .failure:
-                return .success(result: (), source: source, resultIndex: index)
+                return .success(result: (), source: source, next: index)
             }
         }
     }

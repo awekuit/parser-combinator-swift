@@ -20,7 +20,7 @@ public enum UTF8Parser {
                 }
                 i = source.index(after: i)
             }
-            return .success(result: string, source: source, resultIndex: i)
+            return .success(result: string, source: source, next: i)
         }
     }
 
@@ -28,7 +28,7 @@ public enum UTF8Parser {
         Parser<String.UTF8View, String.UTF8View.Index, String.UTF8View.Element> { source, index in
             let e = source[index]
             if e == elem {
-                return .success(result: elem, source: source, resultIndex: source.index(after: index))
+                return .success(result: elem, source: source, next: source.index(after: index))
             } else {
                 return .failure(GenericErrors.unexpectedToken(expected: elem, got: e))
             }
@@ -37,7 +37,7 @@ public enum UTF8Parser {
 
     public static let one = Parser<String.UTF8View, String.UTF8View.Index, String.UTF8View.Element> { source, index in
         if index < source.endIndex {
-            return .success(result: source[index], source: source, resultIndex: source.index(after: index))
+            return .success(result: source[index], source: source, next: source.index(after: index))
         } else {
             return .failure(Errors.noMoreSource)
         }
@@ -54,7 +54,7 @@ public enum UTF8Parser {
             i = source.index(after: i)
         }
         if let result = String(buffer) {
-            return .success(result: Character(result), source: source, resultIndex: i)
+            return .success(result: Character(result), source: source, next: i)
         } else {
             return .failure(GenericParseError(message: "UTF8View to String encoding failed."))
         }
@@ -68,7 +68,7 @@ public enum UTF8Parser {
             let c = source[index]
             if f(c) {
                 if let result = String(bytes: [c], encoding: .utf8) {
-                    return .success(result: result, source: source, resultIndex: source.index(after: index))
+                    return .success(result: result, source: source, next: source.index(after: index))
                 } else {
                     return .failure(GenericParseError(message: "UTF8View to String encoding failed."))
                 }
@@ -90,7 +90,7 @@ public enum UTF8Parser {
             }
             if count >= min {
                 if let result = String(buffer) {
-                    return .success(result: result, source: source, resultIndex: i)
+                    return .success(result: result, source: source, next: i)
                 } else {
                     return .failure(GenericParseError(message: "UTF8View to String encoding failed."))
                 }
@@ -163,7 +163,7 @@ public enum UTF8Parser {
                 }
             }
             if matched {
-                return .success(result: currentNode.original!, source: source, resultIndex: i)
+                return .success(result: currentNode.original!, source: source, next: i)
             } else {
                 return .failure(GenericParseError(message: errorMessage))
             }
@@ -177,7 +177,7 @@ public enum UTF8Parser {
 
         return Parser<String.UTF8View, String.UTF8View.Index, A> { source, index in
             if let (res, i) = trie.contains(source, index) {
-                return .success(result: res, source: source, resultIndex: i)
+                return .success(result: res, source: source, next: i)
             } else {
                 return .failure(error)
             }
@@ -201,7 +201,7 @@ public enum UTF8Parser {
 
     public static let start: Parser<String.UTF8View, String.UTF8View.Index, String> = Parser<String.UTF8View, String.UTF8View.Index, String> { source, index in
         if index == source.startIndex {
-            return .success(result: "", source: source, resultIndex: index)
+            return .success(result: "", source: source, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }
@@ -209,7 +209,7 @@ public enum UTF8Parser {
 
     public static let end: Parser<String.UTF8View, String.UTF8View.Index, String> = Parser<String.UTF8View, String.UTF8View.Index, String> { source, index in
         if index == source.endIndex {
-            return .success(result: "", source: source, resultIndex: index)
+            return .success(result: "", source: source, next: index)
         } else {
             return .failure(Errors.notTheEnd)
         }

@@ -1,6 +1,6 @@
 public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Index: Hashable {
     /// Parse was successful.
-    case success(result: Result, source: Source, resultIndex: Index)
+    case success(result: Result, source: Source, next: Index)
 
     /// Parse was not successful.
     case failure(ParseError)
@@ -11,8 +11,8 @@ public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Inde
     /// - Returns: ParseResult with transformed result or fail with unchanged error.
     public func map<B>(_ transform: (Result, Source, Index) throws -> B) throws -> ParseResult<Source, Index, B> {
         switch self {
-        case let .success(result, source, resultIndex):
-            return .success(result: try transform(result, source, resultIndex), source: source, resultIndex: resultIndex)
+        case let .success(result, source, nextIndex):
+            return .success(result: try transform(result, source, nextIndex), source: source, next: nextIndex)
         case let .failure(err):
             return .failure(err)
         }
@@ -24,8 +24,8 @@ public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Inde
     /// - Returns: the value that was produced by f if self was success or still fail if not
     public func flatMap<B>(_ transform: (Result, Source, Index) throws -> ParseResult<Source, Index, B>) throws -> ParseResult<Source, Index, B> {
         switch self {
-        case let .success(result, source, resultIndex):
-            return try transform(result, source, resultIndex)
+        case let .success(result, source, nextIndex):
+            return try transform(result, source, nextIndex)
         case let .failure(err):
             return .failure(err)
         }
