@@ -3,38 +3,34 @@ import Nimble
 import ParserCombinatorSwift
 import Quick
 
-typealias P = ParserCombinatorSwift.StringParser
-
 class StringParserSpec: QuickSpec {
+    typealias P = ParserCombinatorSwift.StringParser
+
     override func spec() {
-        describe("one") {
-            it("hoge") {
-                let s = "abc"
-                let result = try! P.one.parse(s, s.startIndex).unwrap()
-                expect("a").to(equal(result))
-            }
-            it("one.rep(1)") {
-                let s = "abc"
-                let result = try! P.one.rep(1).map { String($0) }.parse(s, s.startIndex).unwrap()
-                expect("abc").to(equal(result))
-            }
+        it("one") {
+            let input = "abc"
+            let output = try! P.one.parse(input, input.startIndex).unwrap()
+            expect("a").to(equal(output))
         }
-        describe("string") {
-            it("hoge") {
-                let s = "abc"
-                let result = try! P.string(s).parse(s, s.startIndex).unwrap()
-                expect(s).to(equal(result))
-            }
+        it("one.rep(1)") {
+            let input = "abc"
+            let output = try! P.one.rep(1).map { String($0) }.parse(input, input.startIndex).unwrap()
+            expect("abc").to(equal(output))
+        }
+        it("string") {
+            let input = "abc"
+            let output = try! P.string(input).parse(input, input.startIndex).unwrap()
+            expect(input).to(equal(output))
         }
         describe("log") {
             it("short") {
-                let s = "abc"
-                try! P.one.log("one").parse(s, s.startIndex)
+                let input = "abc"
+                try! P.one.log("one").parse(input, input.startIndex)
             }
             it("long") {
-                let s = "123456789012345***678901234567890"
+                let input = "123456789012345***678901234567890"
                 let parser = P.digits ~> P.string("***").log("aster")
-                try! parser.parse(s, s.startIndex)
+                try! parser.parse(input, input.startIndex)
             }
         }
     }
