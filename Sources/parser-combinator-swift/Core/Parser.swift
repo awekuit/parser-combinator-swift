@@ -90,7 +90,7 @@ public class Parser<Input, Output> where Input: Collection {
         Parser.just(x)
     }
 
-    public static func rule<A>(_ p: @escaping @autoclosure () throws -> Parser<Input, A>) -> Parser<Input, A> {
+    public static func lazy<A>(_ p: @escaping @autoclosure () throws -> Parser<Input, A>) -> Parser<Input, A> {
         Parser<Input, A> { input, index in try p().parse(input, index) }
     }
 }
