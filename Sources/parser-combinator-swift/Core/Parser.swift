@@ -93,4 +93,23 @@ public class Parser<Input, Output> where Input: Collection {
     public static func lazy<A>(_ p: @escaping @autoclosure () throws -> Parser<Input, A>) -> Parser<Input, A> {
         Parser<Input, A> { input, index in try p().parse(input, index) }
     }
+
+    public static func memoizedLazy<A>(_ parser: @escaping @autoclosure () throws -> Parser<Input, A>, currentMemoCount count: Int, maxMemoCount max: Int) -> Parser<Input, A> {
+        if count < max {
+            var error: Error?
+            var memo: Parser<Input, A>?
+            do {
+                memo = try parser()
+            } catch let e {
+                error = e
+            }
+            if let m = memo {
+                return Parser<Input, A> { source, index in try m.parse(source, index) }
+            } else {
+                return Parser<Input, A> { _, _ in throw error! }
+            }
+        } else {
+            return lazy(try parser())
+        }
+    }
 }
