@@ -26,7 +26,7 @@ infix operator <~: ParserConjuctionRightGroup
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns the result of rhs
-public func ~> <Source, Index, R1, R2>(lhs: Parser<Source, Index, R1>, rhs: @escaping @autoclosure () -> Parser<Source, Index, R2>) -> Parser<Source, Index, R2> {
+public func ~> <Source, R1, R2>(lhs: Parser<Source, R1>, rhs: @escaping @autoclosure () -> Parser<Source, R2>) -> Parser<Source, R2> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { _, source, r1Index in
             try rhs().parse(source, r1Index)
@@ -40,7 +40,7 @@ public func ~> <Source, Index, R1, R2>(lhs: Parser<Source, Index, R1>, rhs: @esc
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns the result of lhs
-public func <~ <Source, Index, R1, R2>(lhs: Parser<Source, Index, R1>, rhs: @escaping @autoclosure () -> Parser<Source, Index, R2>) -> Parser<Source, Index, R1> {
+public func <~ <Source, R1, R2>(lhs: Parser<Source, R1>, rhs: @escaping @autoclosure () -> Parser<Source, R2>) -> Parser<Source, R1> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, source, r1Index in
             try rhs().parse(source, r1Index).map { _, _, _ in
@@ -56,7 +56,7 @@ public func <~ <Source, Index, R1, R2>(lhs: Parser<Source, Index, R1>, rhs: @esc
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, R1, R2>(lhs: Parser<Source, Index, R1>, rhs: @escaping @autoclosure () -> Parser<Source, Index, R2>) -> Parser<Source, Index, (R1, R2)> {
+public func ~ <Source, R1, R2>(lhs: Parser<Source, R1>, rhs: @escaping @autoclosure () -> Parser<Source, R2>) -> Parser<Source, (R1, R2)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2) }
@@ -70,7 +70,7 @@ public func ~ <Source, Index, R1, R2>(lhs: Parser<Source, Index, R1>, rhs: @esca
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C>(lhs: Parser<Source, Index, (A, B)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, C>) -> Parser<Source, Index, (A, B, C)> {
+public func ~ <Source, A, B, C>(lhs: Parser<Source, (A, B)>, rhs: @escaping @autoclosure () -> Parser<Source, C>) -> Parser<Source, (A, B, C)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r2) }
@@ -84,7 +84,7 @@ public func ~ <Source, Index, A, B, C>(lhs: Parser<Source, Index, (A, B)>, rhs: 
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C>(lhs: Parser<Source, Index, C>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B)>) -> Parser<Source, Index, (C, A, B)> {
+public func ~ <Source, A, B, C>(lhs: Parser<Source, C>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B)>) -> Parser<Source, (C, A, B)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1) }
@@ -98,7 +98,7 @@ public func ~ <Source, Index, A, B, C>(lhs: Parser<Source, Index, C>, rhs: @esca
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D>(lhs: Parser<Source, Index, (A, B, C)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, D>) -> Parser<Source, Index, (A, B, C, D)> {
+public func ~ <Source, A, B, C, D>(lhs: Parser<Source, (A, B, C)>, rhs: @escaping @autoclosure () -> Parser<Source, D>) -> Parser<Source, (A, B, C, D)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r1.2, r2) }
@@ -112,7 +112,7 @@ public func ~ <Source, Index, A, B, C, D>(lhs: Parser<Source, Index, (A, B, C)>,
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D>(lhs: Parser<Source, Index, D>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B, C)>) -> Parser<Source, Index, (D, A, B, C)> {
+public func ~ <Source, A, B, C, D>(lhs: Parser<Source, D>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B, C)>) -> Parser<Source, (D, A, B, C)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1, r2.2) }
@@ -126,7 +126,7 @@ public func ~ <Source, Index, A, B, C, D>(lhs: Parser<Source, Index, D>, rhs: @e
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E>(lhs: Parser<Source, Index, (A, B, C, D)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, E>) -> Parser<Source, Index, (A, B, C, D, E)> {
+public func ~ <Source, A, B, C, D, E>(lhs: Parser<Source, (A, B, C, D)>, rhs: @escaping @autoclosure () -> Parser<Source, E>) -> Parser<Source, (A, B, C, D, E)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r1.2, r1.3, r2) }
@@ -140,7 +140,7 @@ public func ~ <Source, Index, A, B, C, D, E>(lhs: Parser<Source, Index, (A, B, C
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E>(lhs: Parser<Source, Index, E>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B, C, D)>) -> Parser<Source, Index, (E, A, B, C, D)> {
+public func ~ <Source, A, B, C, D, E>(lhs: Parser<Source, E>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B, C, D)>) -> Parser<Source, (E, A, B, C, D)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1, r2.2, r2.3) }
@@ -154,7 +154,7 @@ public func ~ <Source, Index, A, B, C, D, E>(lhs: Parser<Source, Index, E>, rhs:
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F>(lhs: Parser<Source, Index, (A, B, C, D, E)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, F>) -> Parser<Source, Index, (A, B, C, D, E, F)> {
+public func ~ <Source, A, B, C, D, E, F>(lhs: Parser<Source, (A, B, C, D, E)>, rhs: @escaping @autoclosure () -> Parser<Source, F>) -> Parser<Source, (A, B, C, D, E, F)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r1.2, r1.3, r1.4, r2) }
@@ -168,7 +168,7 @@ public func ~ <Source, Index, A, B, C, D, E, F>(lhs: Parser<Source, Index, (A, B
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F>(lhs: Parser<Source, Index, F>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B, C, D, E)>) -> Parser<Source, Index, (F, A, B, C, D, E)> {
+public func ~ <Source, A, B, C, D, E, F>(lhs: Parser<Source, F>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B, C, D, E)>) -> Parser<Source, (F, A, B, C, D, E)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1, r2.2, r2.3, r2.4) }
@@ -182,7 +182,7 @@ public func ~ <Source, Index, A, B, C, D, E, F>(lhs: Parser<Source, Index, F>, r
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G>(lhs: Parser<Source, Index, (A, B, C, D, E, F)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, G>) -> Parser<Source, Index, (A, B, C, D, E, F, G)> {
+public func ~ <Source, A, B, C, D, E, F, G>(lhs: Parser<Source, (A, B, C, D, E, F)>, rhs: @escaping @autoclosure () -> Parser<Source, G>) -> Parser<Source, (A, B, C, D, E, F, G)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r1.2, r1.3, r1.4, r1.5, r2) }
@@ -196,7 +196,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G>(lhs: Parser<Source, Index, (A
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G>(lhs: Parser<Source, Index, G>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B, C, D, E, F)>) -> Parser<Source, Index, (G, A, B, C, D, E, F)> {
+public func ~ <Source, A, B, C, D, E, F, G>(lhs: Parser<Source, G>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B, C, D, E, F)>) -> Parser<Source, (G, A, B, C, D, E, F)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1, r2.2, r2.3, r2.4, r2.5) }
@@ -210,7 +210,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G>(lhs: Parser<Source, Index, G>
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G, H>(lhs: Parser<Source, Index, (A, B, C, D, E, F, G)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, H>) -> Parser<Source, Index, (A, B, C, D, E, F, G, H)> {
+public func ~ <Source, A, B, C, D, E, F, G, H>(lhs: Parser<Source, (A, B, C, D, E, F, G)>, rhs: @escaping @autoclosure () -> Parser<Source, H>) -> Parser<Source, (A, B, C, D, E, F, G, H)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r1.2, r1.3, r1.4, r1.5, r1.6, r2) }
@@ -224,7 +224,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G, H>(lhs: Parser<Source, Index,
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G, H>(lhs: Parser<Source, Index, H>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B, C, D, E, F, G)>) -> Parser<Source, Index, (H, A, B, C, D, E, F, G)> {
+public func ~ <Source, A, B, C, D, E, F, G, H>(lhs: Parser<Source, H>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B, C, D, E, F, G)>) -> Parser<Source, (H, A, B, C, D, E, F, G)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1, r2.2, r2.3, r2.4, r2.5, r2.6) }
@@ -238,7 +238,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G, H>(lhs: Parser<Source, Index,
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G, H, I>(lhs: Parser<Source, Index, (A, B, C, D, E, F, G, H)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, I>) -> Parser<Source, Index, (A, B, C, D, E, F, G, H, I)> {
+public func ~ <Source, A, B, C, D, E, F, G, H, I>(lhs: Parser<Source, (A, B, C, D, E, F, G, H)>, rhs: @escaping @autoclosure () -> Parser<Source, I>) -> Parser<Source, (A, B, C, D, E, F, G, H, I)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r1.2, r1.3, r1.4, r1.5, r1.6, r1.7, r2) }
@@ -252,7 +252,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G, H, I>(lhs: Parser<Source, Ind
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G, H, I>(lhs: Parser<Source, Index, I>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B, C, D, E, F, G, H)>) -> Parser<Source, Index, (I, A, B, C, D, E, F, G, H)> {
+public func ~ <Source, A, B, C, D, E, F, G, H, I>(lhs: Parser<Source, I>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B, C, D, E, F, G, H)>) -> Parser<Source, (I, A, B, C, D, E, F, G, H)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1, r2.2, r2.3, r2.4, r2.5, r2.6, r2.7) }
@@ -266,7 +266,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G, H, I>(lhs: Parser<Source, Ind
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G, H, I, J>(lhs: Parser<Source, Index, (A, B, C, D, E, F, G, H, I)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, J>) -> Parser<Source, Index, (A, B, C, D, E, F, G, H, I, J)> {
+public func ~ <Source, A, B, C, D, E, F, G, H, I, J>(lhs: Parser<Source, (A, B, C, D, E, F, G, H, I)>, rhs: @escaping @autoclosure () -> Parser<Source, J>) -> Parser<Source, (A, B, C, D, E, F, G, H, I, J)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r1.2, r1.3, r1.4, r1.5, r1.6, r1.7, r1.8, r2) }
@@ -280,7 +280,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G, H, I, J>(lhs: Parser<Source, 
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G, H, I, J>(lhs: Parser<Source, Index, J>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B, C, D, E, F, G, H, I)>) -> Parser<Source, Index, (J, A, B, C, D, E, F, G, H, I)> {
+public func ~ <Source, A, B, C, D, E, F, G, H, I, J>(lhs: Parser<Source, J>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B, C, D, E, F, G, H, I)>) -> Parser<Source, (J, A, B, C, D, E, F, G, H, I)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1, r2.2, r2.3, r2.4, r2.5, r2.6, r2.7, r2.8) }
@@ -294,7 +294,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G, H, I, J>(lhs: Parser<Source, 
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G, H, I, J, K>(lhs: Parser<Source, Index, (A, B, C, D, E, F, G, H, I, J)>, rhs: @escaping @autoclosure () -> Parser<Source, Index, K>) -> Parser<Source, Index, (A, B, C, D, E, F, G, H, I, J, K)> {
+public func ~ <Source, A, B, C, D, E, F, G, H, I, J, K>(lhs: Parser<Source, (A, B, C, D, E, F, G, H, I, J)>, rhs: @escaping @autoclosure () -> Parser<Source, K>) -> Parser<Source, (A, B, C, D, E, F, G, H, I, J, K)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1.0, r1.1, r1.2, r1.3, r1.4, r1.5, r1.6, r1.7, r1.8, r1.9, r2) }
@@ -308,7 +308,7 @@ public func ~ <Source, Index, A, B, C, D, E, F, G, H, I, J, K>(lhs: Parser<Sourc
 ///   - lhs: the first parser that has to succeed
 ///   - rhs: the second parser that has to succeed
 /// - Returns: a parser that parses lhs, then rhs on the rest and returns a tuple of the combined results
-public func ~ <Source, Index, A, B, C, D, E, F, G, H, I, J, K>(lhs: Parser<Source, Index, K>, rhs: @escaping @autoclosure () -> Parser<Source, Index, (A, B, C, D, E, F, G, H, I, J)>) -> Parser<Source, Index, (K, A, B, C, D, E, F, G, H, I, J)> {
+public func ~ <Source, A, B, C, D, E, F, G, H, I, J, K>(lhs: Parser<Source, K>, rhs: @escaping @autoclosure () -> Parser<Source, (A, B, C, D, E, F, G, H, I, J)>) -> Parser<Source, (K, A, B, C, D, E, F, G, H, I, J)> {
     Parser { source, index in
         try lhs.parse(source, index).flatMap { r1, _, r1Index in
             try rhs().parse(source, r1Index).map { r2, _, _ in (r1, r2.0, r2.1, r2.2, r2.3, r2.4, r2.5, r2.6, r2.7, r2.8, r2.9) }

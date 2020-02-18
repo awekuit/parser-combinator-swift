@@ -1,6 +1,6 @@
-public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Index: Hashable {
+public enum ParseResult<Source, Result> where Source: Collection { // where Source: Sequence, Index: Hashable {
     /// Parse was successful.
-    case success(result: Result, source: Source, next: Index)
+    case success(result: Result, source: Source, next: Source.Index)
 
     /// Parse was not successful.
     case failure(ParseError)
@@ -9,7 +9,7 @@ public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Inde
     ///
     /// - Parameter transform: a function to use to transform result
     /// - Returns: ParseResult with transformed result or fail with unchanged error.
-    public func map<B>(_ transform: (Result, Source, Index) throws -> B) throws -> ParseResult<Source, Index, B> {
+    public func map<B>(_ transform: (Result, Source, Source.Index) throws -> B) throws -> ParseResult<Source, B> {
         switch self {
         case let .success(result, source, nextIndex):
             return .success(result: try transform(result, source, nextIndex), source: source, next: nextIndex)
@@ -22,7 +22,7 @@ public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Inde
     ///
     /// - Parameter transform: a function that takes a result and returns a parse result
     /// - Returns: the value that was produced by f if self was success or still fail if not
-    public func flatMap<B>(_ transform: (Result, Source, Index) throws -> ParseResult<Source, Index, B>) throws -> ParseResult<Source, Index, B> {
+    public func flatMap<B>(_ transform: (Result, Source, Source.Index) throws -> ParseResult<Source, B>) throws -> ParseResult<Source, B> {
         switch self {
         case let .success(result, source, nextIndex):
             return try transform(result, source, nextIndex)
@@ -76,7 +76,7 @@ public enum ParseResult<Source, Index, Result> { // where Source: Sequence, Inde
     ///
     /// - Returns: the rest if successful
     /// - Throws: Errors.unwrappedFailedResult if not successful
-    public func result() throws -> Index {
+    public func result() throws -> Source.Index {
         switch self {
         case let .success(_, _, index):
             return index

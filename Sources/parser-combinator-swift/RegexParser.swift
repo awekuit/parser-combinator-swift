@@ -6,7 +6,7 @@ import Foundation
 public typealias R = RegexParser
 
 /// A parser that parses Strings with a given regular expression
-public final class RegexParser: Parser<String, String.Index, String> {
+public final class RegexParser: Parser<String, String> {
     /// Possible errors while using RegexParser
     public enum Error: ParseError {
         /// Pattern does not match the input (at the beginning)
