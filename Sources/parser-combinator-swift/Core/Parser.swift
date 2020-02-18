@@ -73,8 +73,8 @@ public class Parser<Source, Index, Result> {
     }
 
     public func filter(_ pred: @escaping (Result) -> Bool) -> Parser<Source, Index, Result> {
-        Parser<Source, Index, Result> { source, Index in
-            let r1 = try self.parse(source, Index)
+        Parser<Source, Index, Result> { source, index in
+            let r1 = try self.parse(source, index)
             switch r1 {
             case let .success(result, _, _) where pred(result):
                 return r1
