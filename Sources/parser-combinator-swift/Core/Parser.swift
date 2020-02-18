@@ -27,8 +27,8 @@ public class Parser<Input, Output> where Input: Collection {
     /// - Parameter value: the result to produce
     /// - Returns: a parser that just produces this value as success
     public static func just<B>(_ value: B) -> Parser<Input, B> {
-        Parser<Input, B> { tokens, index in
-            .success(output: value, input: tokens, next: index)
+        Parser<Input, B> { input, index in
+            .success(output: value, input: input, next: index)
         }
     }
 
