@@ -14,12 +14,12 @@ extension Parser {
         (map { $0 }) | Parser.just(nil)
     }
 
-    public func or(_ other: @escaping @autoclosure () throws -> Parser<Input, Output>) -> Parser<Input, Output> {
+    public func or(_ other: Parser<Input, Output>) -> Parser<Input, Output> {
         Parser { input, index in
             let output = try self.parse(input, index)
             switch output {
             case .failure:
-                return try other().parse(input, index)
+                return try other.parse(input, index)
             default:
                 return output
             }
