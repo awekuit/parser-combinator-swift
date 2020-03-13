@@ -22,5 +22,11 @@ class UTF8ParserSpec: QuickSpec {
             let output = try! P.string(input).parse(input.utf8, input.startIndex).unwrap()
             expect(input).to(equal(output))
         }
+        it("stringIn") {
+            let input = "\u{2000}\u{2002}"
+            let parser = P.stringIn("\u{2000}", "\u{2002}").rep(1).map { $0.joined(separator: "") }
+            let output = try! parser.parse(input.utf8, input.startIndex).unwrap()
+            expect(input).to(equal(output))
+        }
     }
 }

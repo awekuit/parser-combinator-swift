@@ -136,14 +136,19 @@ public enum UTF8Parser {
         elemWhilePred({ set.contains($0) }, min: min, max: max)
     }
 
-    public static func stringIn(_ xs: String...) -> Parser<String.UTF8View, String> { stringIn(Set(xs)) }
+    public static func stringIn(_ xs: String...) -> Parser<String.UTF8View, String> { stringIn(xs) }
 
-    public static func stringIn(_ xs: [String]) -> Parser<String.UTF8View, String> { stringIn(Set(xs)) }
+    public static func stringIn(_ xs: [String]) -> Parser<String.UTF8View, String> { stringIn(Set(xs.map { Array($0.utf8) })) }
 
-    public static func stringIn(_ xs: Set<String>) -> Parser<String.UTF8View, String> {
+    // The type of argument xs cannot be `Set<String>`.
+    // Because `Set<[String.UTF8View.Element]>` and `Set<String>` have different deduplication criteria.
+    // Specifically,
+    // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
+    // - Set(arrayLiteral: Array("\u{2000}".utf8), Array("\u{2002}".utf8)).count == 2
+    public static func stringIn(_ xs: Set<[String.UTF8View.Element]>) -> Parser<String.UTF8View, String> {
         let errorMessage = "Did not match stringIn(\(xs))."
         let trie = Trie<String.UTF8View.Element, String>()
-        xs.forEach { trie.insert(Array($0.utf8), $0) }
+        xs.forEach { trie.insert($0, String($0)!) }
 
         return Parser<String.UTF8View, String> { input, index in
             var i: String.UTF8View.Index = index

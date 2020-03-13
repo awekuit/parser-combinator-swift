@@ -22,6 +22,12 @@ class StringParserSpec: QuickSpec {
             let output = try! P.string(input).parse(input, input.startIndex).unwrap()
             expect(input).to(equal(output))
         }
+        it("stringIn") {
+            let input = "\u{2000}\u{2002}"
+            let parser = P.stringIn("\u{2000}", "\u{2002}").rep(1).map { $0.joined(separator: "") }
+            let output = try! parser.parse(input, input.startIndex).unwrap()
+            expect(input).to(equal(output))
+        }
         describe("log") {
             it("short") {
                 let input = "abc"

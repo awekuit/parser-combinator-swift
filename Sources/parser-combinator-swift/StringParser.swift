@@ -118,10 +118,13 @@ public enum StringParser {
         charWhilePred({ set.contains($0) }, min: min, max: max).map { String($0) }
     }
 
-    public static func stringIn(_ xs: String...) -> Parser<String, String> { stringIn(Set(xs)) }
+    public static func stringIn(_ xs: String...) -> Parser<String, String> { stringIn(xs) }
 
     public static func stringIn(_ xs: [String]) -> Parser<String, String> { stringIn(Set(xs)) }
 
+    // Note that Set<String> can be counterintuitive in deduplication criteria !
+    // Specifically,
+    // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
     public static func stringIn(_ xs: Set<String>) -> Parser<String, String> {
         let error = GenericParseError(message: "Did not match stringIn(\(xs)).")
         let trie = Trie<Character, String>()

@@ -142,14 +142,19 @@ public enum UTF8CStringParser {
         elemWhilePred({ set.contains($0) }, min: min, max: max)
     }
 
-    public static func stringIn(_ xs: String...) -> Parser<ContiguousArray<CChar>, String> { stringIn(Set(xs)) }
+    public static func stringIn(_ xs: String...) -> Parser<ContiguousArray<CChar>, String> { stringIn(xs) }
 
-    public static func stringIn(_ xs: [String]) -> Parser<ContiguousArray<CChar>, String> { stringIn(Set(xs)) }
+    public static func stringIn(_ xs: [String]) -> Parser<ContiguousArray<CChar>, String> { stringIn(Set(xs.map { $0.utf8CString })) }
 
-    public static func stringIn(_ xs: Set<String>) -> Parser<ContiguousArray<CChar>, String> {
+    // The type of argument xs cannot be `Set<String>`.
+    // Because `Set<ContiguousArray<CChar>>` and `Set<String>` have different deduplication criteria.
+    // Specifically,
+    // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
+    // - Set(arrayLiteral: "\u{2000}".utf8CString, "\u{2002}".utf8CString).count == 2
+    public static func stringIn(_ xs: Set<ContiguousArray<CChar>>) -> Parser<ContiguousArray<CChar>, String> {
         let errorMessage = "Did not match stringIn(\(xs))."
         let trie = Trie<CChar, String>()
-        xs.forEach { trie.insert(Array($0.utf8CString).dropLast(), $0) }
+        xs.forEach { trie.insert(Array($0).dropLast(), String(cCharArray: $0)) }
 
         return Parser<ContiguousArray<CChar>, String> { input, index in
             var i: Int = index

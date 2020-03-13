@@ -149,14 +149,19 @@ public enum UTF16Parser {
         }
     }
 
-    public static func stringIn(_ xs: String...) -> Parser<String.UTF16View, String> { stringIn(Set(xs)) }
+    public static func stringIn(_ xs: String...) -> Parser<String.UTF16View, String> { stringIn(xs) }
 
-    public static func stringIn(_ xs: [String]) -> Parser<String.UTF16View, String> { stringIn(Set(xs)) }
+    public static func stringIn(_ xs: [String]) -> Parser<String.UTF16View, String> { stringIn(Set(xs.map { Array($0.utf16) })) }
 
-    public static func stringIn(_ xs: Set<String>) -> Parser<String.UTF16View, String> {
+    // The type of argument xs cannot be `Set<String>`.
+    // Because `Set<[String.UTF16View.Element]>` and `Set<String>` have different deduplication criteria.
+    // Specifically,
+    // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
+    // - Set(arrayLiteral: Array("\u{2000}".utf16), Array("\u{2002}".utf16)).count == 2
+    public static func stringIn(_ xs: Set<[String.UTF16View.Element]>) -> Parser<String.UTF16View, String> {
         let errorMessage = "Did not match stringIn(\(xs))."
         let trie = Trie<String.UTF16View.Element, String>()
-        xs.forEach { trie.insert(Array($0.utf16), $0) }
+        xs.forEach { trie.insert($0, String($0)) }
 
         return Parser<String.UTF16View, String> { input, index in
             var i: String.UTF16View.Index = index
