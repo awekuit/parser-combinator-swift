@@ -8,15 +8,18 @@ public enum UTF16Parser {
     /// - Parameter string: the String which should be parsed
     /// - Returns: a parser that parses that String
     public static func string(_ string: String) -> Parser<String.UTF16View, String> {
+        let noMoreSourceFailure = ParseResult<String.UTF16View, String>.failure(Errors.noMoreSource)
+        let unexpectedStringFailure = ParseResult<String.UTF16View, String>.failure(Errors.unexpectedString(expected: string))
         let view = string.utf16
+
         return Parser<String.UTF16View, String> { input, index in
             var i = index
             for e in view {
                 guard i < input.endIndex else {
-                    return .failure(Errors.noMoreSource)
+                    return noMoreSourceFailure
                 }
                 guard e == input[i] else {
-                    return .failure(GenericErrors.unexpectedToken(expected: e, got: input[i]))
+                    return unexpectedStringFailure
                 }
                 i = input.index(after: i)
             }
@@ -25,53 +28,72 @@ public enum UTF16Parser {
     }
 
     public static func elem(_ elem: String.UTF16View.Element) -> Parser<String.UTF16View, String.UTF16View.Element> {
-        Parser<String.UTF16View, String.UTF16View.Element> { input, index in
+        let noMoreSourceFailure = ParseResult<String.UTF16View, String.UTF16View.Element>.failure(Errors.noMoreSource)
+        let unexpectedElementFailure = ParseResult<String.UTF16View, String.UTF16View.Element>.failure(Errors.unexpectedElement(expected: Int(elem)))
+
+        return Parser<String.UTF16View, String.UTF16View.Element> { input, index in
+            guard index < input.endIndex else {
+                return noMoreSourceFailure
+            }
             let e = input[index]
             if e == elem {
                 return .success(output: elem, input: input, next: input.index(after: index))
             } else {
-                return .failure(GenericErrors.unexpectedToken(expected: elem, got: e))
+                return unexpectedElementFailure
             }
         }
     }
 
-    public static let one = Parser<String.UTF16View, String.UTF16View.Element> { input, index in
-        if index < input.endIndex {
-            return .success(output: input[index], input: input, next: input.index(after: index))
-        } else {
-            return .failure(Errors.noMoreSource)
-        }
-    }
+    public static let one: Parser<String.UTF16View, String.UTF16View.Element> = {
+        let failure = ParseResult<String.UTF16View, String.UTF16View.Element>.failure(Errors.noMoreSource)
 
-    public static let char = Parser<String.UTF16View, Character> { input, index in
-        guard index < input.endIndex else {
-            return .failure(Errors.noMoreSource)
+        return Parser<String.UTF16View, String.UTF16View.Element> { input, index in
+            if index < input.endIndex {
+                return .success(output: input[index], input: input, next: input.index(after: index))
+            } else {
+                return failure
+            }
         }
-        if UTF16.isSurrogate(input[index]) {
-            let nextIndex = input.index(index, offsetBy: 2)
-            return .success(output: Character(String(input[index ..< nextIndex])!), input: input, next: nextIndex)
-        } else {
-            let nextIndex = input.index(after: index)
-            return .success(output: Character(String(utf16CodeUnits: [input[index]], count: 1)), input: input, next: nextIndex)
+    }()
+
+    public static let char: Parser<String.UTF16View, Character> = {
+        let failure = ParseResult<String.UTF16View, Character>.failure(Errors.noMoreSource)
+
+        return Parser<String.UTF16View, Character> { input, index in
+            guard index < input.endIndex else {
+                return failure
+            }
+            if UTF16.isSurrogate(input[index]) {
+                let nextIndex = input.index(index, offsetBy: 2)
+                return .success(output: Character(String(input[index ..< nextIndex])!), input: input, next: nextIndex)
+            } else {
+                let nextIndex = input.index(after: index)
+                return .success(output: Character(String(utf16CodeUnits: [input[index]], count: 1)), input: input, next: nextIndex)
+            }
         }
-    }
+    }()
 
     public static func elemPred(_ f: @escaping (String.UTF16View.Element) -> Bool) -> Parser<String.UTF16View, String> {
-        Parser<String.UTF16View, String> { input, index in
-            if index >= input.endIndex {
-                return .failure(Errors.noMoreSource)
+        let noMoreSourceFailure = ParseResult<String.UTF16View, String>.failure(Errors.noMoreSource)
+        let unsatisfiedPredicateFailure =  ParseResult<String.UTF16View, String>.failure(Errors.unsatisfiedPredicate)
+
+        return Parser<String.UTF16View, String> { input, index in
+            guard index < input.endIndex else {
+                return noMoreSourceFailure
             }
             let c = input[index]
             if f(c) {
                 return .success(output: String(utf16CodeUnits: [c], count: 1), input: input, next: input.index(after: index))
             } else {
-                return .failure(GenericParseError(message: "[WIP]")) // TODO:
+                return unsatisfiedPredicateFailure
             }
         }
     }
 
     public static func elemWhilePred(_ f: @escaping (String.UTF16View.Element) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF16View, String> {
-        Parser<String.UTF16View, String> { input, index in
+        let failure =  ParseResult<String.UTF16View, String>.failure(Errors.expectedAtLeast(count: min))
+
+        return Parser<String.UTF16View, String> { input, index in
             var i = index
             var buffer = ContiguousArray<String.UTF16View.Element>()
             loop: while max == nil || buffer.count < max!, i < input.endIndex, f(input[i]) {
@@ -81,7 +103,7 @@ public enum UTF16Parser {
             if buffer.count >= min {
                 return .success(output: String(buffer), input: input, next: i)
             } else {
-                return .failure(Errors.expectedAtLeast(min, got: buffer.count))
+                return failure
             }
         }
     }
@@ -126,10 +148,12 @@ public enum UTF16Parser {
     }
 
     public static func stringWhilePred(_ length: Int, _ f: @escaping (String.UTF16View.SubSequence) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF16View, String> {
-        Parser<String.UTF16View, String> { input, index in
+        let failure =  ParseResult<String.UTF16View, String>.failure(Errors.expectedAtLeast(count: min))
+
+        return Parser<String.UTF16View, String> { input, index in
             var start: String.UTF16View.Index = index
             guard var end: String.UTF16View.Index = input.index(index, offsetBy: length, limitedBy: input.endIndex) else {
-                return .failure(Errors.noMoreSource)
+                return failure
             }
             var buffer = ContiguousArray<String.UTF16View.Element>()
             loop: while max == nil || buffer.count < max!, start < input.endIndex, end < input.endIndex, f(input[start ..< end]) {
@@ -140,7 +164,7 @@ public enum UTF16Parser {
             if buffer.count >= min {
                 return .success(output: String(buffer), input: input, next: start)
             } else {
-                return .failure(Errors.expectedAtLeast(min, got: buffer.count))
+                return failure
             }
         }
     }
@@ -155,7 +179,7 @@ public enum UTF16Parser {
     // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
     // - Set(arrayLiteral: Array("\u{2000}".utf16), Array("\u{2002}".utf16)).count == 2
     public static func stringIn(_ xs: Set<[String.UTF16View.Element]>) -> Parser<String.UTF16View, String> {
-        let errorMessage = "Did not match stringIn(\(xs))."
+        let failure = ParseResult<String.UTF16View, String>.failure(GenericParseError(message: "Did not match stringIn(\(xs))."))
         let trie = Trie<String.UTF16View.Element, String>()
         xs.forEach { trie.insert($0, String($0)) }
 
@@ -179,13 +203,13 @@ public enum UTF16Parser {
             if matched {
                 return .success(output: currentNode.original!, input: input, next: i)
             } else {
-                return .failure(GenericParseError(message: errorMessage))
+                return failure
             }
         }
     }
 
     public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<String.UTF16View, A> {
-        let error = GenericParseError(message: "Did not match dictionaryIn(\(dict)).")
+        let failure = ParseResult<String.UTF16View, A>.failure(GenericParseError(message: "Did not match dictionaryIn(\(dict))."))
         let trie = Trie<String.UTF16View.Element, A>()
         dict.forEach { k, v in trie.insert(Array(k.utf16), v) }
 
@@ -193,7 +217,7 @@ public enum UTF16Parser {
             if let (res, i) = trie.contains(input, index) {
                 return .success(output: res, input: input, next: i)
             } else {
-                return .failure(error)
+                return failure
             }
         }
     }
@@ -213,21 +237,29 @@ public enum UTF16Parser {
 
     // MARK: - Common characters
 
-    public static let start: Parser<String.UTF16View, String> = Parser<String.UTF16View, String> { input, index in
-        if index == input.startIndex {
-            return .success(output: "", input: input, next: index)
-        } else {
-            return .failure(Errors.notTheEnd)
-        }
-    }
+    public static let start: Parser<String.UTF16View, String> = {
+        let failure = ParseResult<String.UTF16View, String>.failure(Errors.notTheEnd)
 
-    public static let end: Parser<String.UTF16View, String> = Parser<String.UTF16View, String> { input, index in
-        if index == input.endIndex {
-            return .success(output: "", input: input, next: index)
-        } else {
-            return .failure(Errors.notTheEnd)
+        return Parser<String.UTF16View, String> { input, index in
+            if index == input.startIndex {
+                return .success(output: "", input: input, next: index)
+            } else {
+                return failure
+            }
         }
-    }
+    }()
+
+    public static let end: Parser<String.UTF16View, String> = {
+        let failure = ParseResult<String.UTF16View, String>.failure(Errors.notTheEnd)
+
+        return Parser<String.UTF16View, String> { input, index in
+            if index == input.endIndex {
+                return .success(output: "", input: input, next: index)
+            } else {
+                return failure
+            }
+        }
+    }()
 }
 
 extension String {

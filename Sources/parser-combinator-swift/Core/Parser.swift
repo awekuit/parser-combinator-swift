@@ -45,7 +45,8 @@ public class Parser<Input, Output> where Input: Collection {
     /// - Parameter message: the message to use for GenericParseError
     /// - Returns: a parser that always fails
     public static func fail(message: String) -> Parser<Input, Output> {
-        Parser<Input, Output> { _, _ in .failure(GenericParseError(message: message)) }
+        let failure = ParseResult<Input, Output>.failure(GenericParseError(message: message))
+        return Parser<Input, Output> { _, _ in failure }
     }
 
     /// Produce a new parser for every succeeded parsing process.
@@ -73,13 +74,14 @@ public class Parser<Input, Output> where Input: Collection {
     }
 
     public func filter(_ pred: @escaping (Output) -> Bool) -> Parser<Input, Output> {
-        Parser<Input, Output> { input, index in
+        let failure = ParseResult<Input, Output>.failure(Errors.filtered)
+        return Parser<Input, Output> { input, index in
             let r1 = try self.parse(input, index)
             switch r1 {
             case let .success(output, _, _) where pred(output):
                 return r1
             case .success:
-                return .failure(Errors.filtered)
+                return failure
             case .failure:
                 return r1
             }

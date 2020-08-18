@@ -1,11 +1,12 @@
 extension Parser {
     public var typeErased: Parser<Input, Void> {
         Parser<Input, Void> { input, index in
-            switch try self.parse(input, index) {
+            let result = try self.parse(input, index)
+            switch result {
             case let .success(_, _, nextIndex):
                 return .success(output: (), input: input, next: nextIndex)
-            case let .failure(err):
-                return .failure(err)
+            case .failure:
+                return result as! ParseResult<Input, Void>
             }
         }
     }
@@ -27,7 +28,8 @@ extension Parser {
     }
 
     public func rep(_ min: Int, _ max: Int? = nil) -> Parser<Input, [Output]> {
-        Parser<Input, [Output]> { input, index in
+        let failure = ParseResult<Input, [Output]>.failure(Errors.expectedAtLeast(count: min))
+        return Parser<Input, [Output]> { input, index in
             var outputs = ContiguousArray<Output>()
             var i = index
 
@@ -44,7 +46,7 @@ extension Parser {
             if outputs.count >= min {
                 return .success(output: Array(outputs), input: input, next: i)
             } else {
-                return .failure(Errors.repeatFailed(min: min, max: max, count: outputs.count))
+                return failure
             }
         }
     }
@@ -59,20 +61,22 @@ extension Parser {
     }
 
     public var positiveLookahead: Parser<Input, Void> {
-        Parser<Input, Void> { input, index in
+        let failure = ParseResult<Input, Void>.failure(Errors.positiveLookaheadFailed)
+        return Parser<Input, Void> { input, index in
             let r = try self.parse(input, index)
             switch r {
             case .success: return .success(output: (), input: input, next: index)
-            case .failure: return .failure(Errors.positiveLookaheadFailed)
+            case .failure: return failure
             }
         }
     }
 
     public var negativeLookahead: Parser<Input, Void> {
-        Parser<Input, Void> { input, index in
+        let failure = ParseResult<Input, Void>.failure(Errors.negativeLookaheadFailed)
+        return Parser<Input, Void> { input, index in
             switch try self.parse(input, index) {
             case .success:
-                return .failure(Errors.negativeLookaheadFailed)
+                return failure
             case .failure:
                 return .success(output: (), input: input, next: index)
             }

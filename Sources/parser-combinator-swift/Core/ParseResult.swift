@@ -13,8 +13,8 @@ public enum ParseResult<Input, Output> where Input: Collection { // where Source
         switch self {
         case let .success(output, input, nextIndex):
             return .success(output: try transform(output, input, nextIndex), input: input, next: nextIndex)
-        case let .failure(err):
-            return .failure(err)
+        case .failure:
+            return self as! ParseResult<Input, B>
         }
     }
 
@@ -26,8 +26,8 @@ public enum ParseResult<Input, Output> where Input: Collection { // where Source
         switch self {
         case let .success(output, input, nextIndex):
             return try transform(output, input, nextIndex)
-        case let .failure(err):
-            return .failure(err)
+        case .failure:
+            return self as! ParseResult<Input, B>
         }
     }
 
