@@ -30,23 +30,21 @@ extension Parser {
         Parser<Input, [Output]> { input, index in
             var outputs = ContiguousArray<Output>()
             var i = index
-            var count = 0
 
-            loop: while max == nil || count < max! {
+            loop: while max == nil || outputs.count < max! {
                 switch try self.parse(input, i) {
                 case let .success(output, _, nextIndex):
                     outputs.append(output)
                     i = nextIndex
-                    count += 1
                 case .failure:
                     break loop
                 }
             }
 
-            if count >= min {
+            if outputs.count >= min {
                 return .success(output: Array(outputs), input: input, next: i)
             } else {
-                return .failure(Errors.repeatFailed(min: min, max: max, count: count))
+                return .failure(Errors.repeatFailed(min: min, max: max, count: outputs.count))
             }
         }
     }

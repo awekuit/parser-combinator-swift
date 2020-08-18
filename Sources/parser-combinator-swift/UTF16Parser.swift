@@ -72,18 +72,16 @@ public enum UTF16Parser {
 
     public static func elemWhilePred(_ f: @escaping (String.UTF16View.Element) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF16View, String> {
         Parser<String.UTF16View, String> { input, index in
-            var count = 0
             var i = index
             var buffer = ContiguousArray<String.UTF16View.Element>()
-            loop: while max == nil || count < max!, i < input.endIndex, f(input[i]) {
+            loop: while max == nil || buffer.count < max!, i < input.endIndex, f(input[i]) {
                 buffer.append(input[i])
-                count += 1
                 i = input.index(after: i)
             }
-            if count >= min {
+            if buffer.count >= min {
                 return .success(output: String(buffer), input: input, next: i)
             } else {
-                return .failure(Errors.expectedAtLeast(min, got: count))
+                return .failure(Errors.expectedAtLeast(min, got: buffer.count))
             }
         }
     }
@@ -129,22 +127,20 @@ public enum UTF16Parser {
 
     public static func stringWhilePred(_ length: Int, _ f: @escaping (String.UTF16View.SubSequence) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF16View, String> {
         Parser<String.UTF16View, String> { input, index in
-            var count = 0
             var start: String.UTF16View.Index = index
             guard var end: String.UTF16View.Index = input.index(index, offsetBy: length, limitedBy: input.endIndex) else {
                 return .failure(Errors.noMoreSource)
             }
             var buffer = ContiguousArray<String.UTF16View.Element>()
-            loop: while max == nil || count < max!, start < input.endIndex, end < input.endIndex, f(input[start ..< end]) {
+            loop: while max == nil || buffer.count < max!, start < input.endIndex, end < input.endIndex, f(input[start ..< end]) {
                 buffer.append(input[start])
-                count += 1
                 start = input.index(after: start)
                 end = input.index(after: end)
             }
-            if count >= min {
+            if buffer.count >= min {
                 return .success(output: String(buffer), input: input, next: start)
             } else {
-                return .failure(Errors.expectedAtLeast(min, got: count))
+                return .failure(Errors.expectedAtLeast(min, got: buffer.count))
             }
         }
     }

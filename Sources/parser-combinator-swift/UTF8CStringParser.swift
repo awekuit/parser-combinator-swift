@@ -75,19 +75,17 @@ public enum UTF8CStringParser {
 
     public static func elemWhilePred(_ f: @escaping (CChar) -> Bool, min: Int, max: Int? = nil) -> Parser<ContiguousArray<CChar>, String> {
         Parser<ContiguousArray<CChar>, String> { input, index in
-            var count = 0
             var i = index
             var buffer = ContiguousArray<CChar>()
-            loop: while max == nil || count < max!, i < input.endIndexWithoutTerminator, f(input[i]) {
+            loop: while max == nil || buffer.count < max!, i < input.endIndexWithoutTerminator, f(input[i]) {
                 buffer.append(input[i])
-                count += 1
                 i += 1
             }
             buffer.append(0) // NULL Terminated
-            if count >= min {
+            if buffer.count >= min {
                 return .success(output: String(cCharArray: buffer), input: input, next: i)
             } else {
-                return .failure(Errors.expectedAtLeast(min, got: count))
+                return .failure(Errors.expectedAtLeast(min, got: buffer.count))
             }
         }
     }

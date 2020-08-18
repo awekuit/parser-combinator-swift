@@ -80,22 +80,20 @@ public enum UTF8Parser {
 
     public static func elemWhilePred(_ f: @escaping (String.UTF8View.Element) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF8View, String> {
         Parser<String.UTF8View, String> { input, index in
-            var count = 0
             var i = index
             var buffer = ContiguousArray<String.UTF8View.Element>()
-            loop: while max == nil || count < max!, i < input.endIndex, f(input[i]) {
+            loop: while max == nil || buffer.count < max!, i < input.endIndex, f(input[i]) {
                 buffer.append(input[i])
-                count += 1
                 i = input.index(after: i)
             }
-            if count >= min {
+            if buffer.count >= min {
                 if let output = String(buffer) {
                     return .success(output: output, input: input, next: i)
                 } else {
                     return .failure(GenericParseError(message: "UTF8View to String encoding failed."))
                 }
             } else {
-                return .failure(Errors.expectedAtLeast(min, got: count))
+                return .failure(Errors.expectedAtLeast(min, got: buffer.count))
             }
         }
     }
