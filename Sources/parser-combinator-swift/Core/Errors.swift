@@ -13,20 +13,16 @@ public enum Errors: ParseError {
     /// is returned when `Parser.or` is called on an empty collection of parsers
     case conjunctionOfEmptyCollection
 
-    /// is returned when `atLeastOnce` failed because the parser succeeded not at all
-    case expectedAtLeastOnce
-
     /// is returned when `atLeast(count:)` failed because the parser succeeded less than n
-    case expectedAtLeast(Int, got: Int)
+    case expectedAtLeast(count: Int)
 
-    /// is returned when `exactly(count:)` failed because the parser succeeded less than or more than n
-    case expectedExactly(Int, got: Int)
+    case unexpectedString(expected: String)
 
-    case repeatFailed(min: Int, max: Int?, count: Int)
+    case unexpectedCharacter(expected: Character)
 
-    case unexpectedString(expected: String, got: String)
+    case unexpectedElement(expected: Int)
 
-    case unexpectedCharacter(expected: Character, got: Character)
+    case unsatisfiedPredicate
 
     case positiveLookaheadFailed
 
@@ -43,10 +39,6 @@ public enum Errors: ParseError {
     case logged // FIXME:
 }
 
-// TODO: Rename
-public enum GenericErrors<A>: ParseError {
-    case unexpectedToken(expected: A, got: A)
-}
 
 /// A generic error that occured while parsing
 public struct GenericParseError: ParseError, Equatable {

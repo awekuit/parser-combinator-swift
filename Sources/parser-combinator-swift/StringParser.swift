@@ -8,14 +8,16 @@ public enum StringParser {
     /// - Parameter string: the String which should be parsed
     /// - Returns: a parser that parses that String
     public static func string(_ string: String) -> Parser<String, String> {
-        Parser<String, String> { input, index in
+        let noMoreSourceFailure = ParseResult<String, String>.failure(Errors.noMoreSource)
+        let unexpectedStringFailure = ParseResult<String, String>.failure(Errors.unexpectedString(expected: string))
+        return Parser<String, String> { input, index in
             var i = index
             for c in string {
                 if i >= input.endIndex {
-                    return .failure(Errors.noMoreSource)
+                    return noMoreSourceFailure
                 }
                 if c != input[i] {
-                    return .failure(Errors.unexpectedCharacter(expected: c, got: input[i]))
+                    return unexpectedStringFailure
                 }
                 i = input.index(after: i)
             }
@@ -24,36 +26,42 @@ public enum StringParser {
     }
 
     public static func char(_ char: Character) -> Parser<String, Character> {
-        Parser<String, Character> { input, index in
+        let noMoreSourceFailure = ParseResult<String, Character>.failure(Errors.noMoreSource)
+        let unexpectedCharacterFailure = ParseResult<String, Character>.failure(Errors.unexpectedCharacter(expected: char))
+        return Parser<String, Character> { input, index in
             guard index < input.endIndex else {
-                return .failure(Errors.noMoreSource)
+                return noMoreSourceFailure
             }
             let c = input[index]
             if c == char {
                 return .success(output: char, input: input, next: input.index(after: index))
             } else {
-                return .failure(Errors.unexpectedCharacter(expected: char, got: c))
+                return unexpectedCharacterFailure
             }
         }
     }
 
     /// Parses one Character from a given String
-    public static let one = Parser<String, Character> { input, index in
-        if index < input.endIndex {
-            return .success(output: input[index], input: input, next: input.index(after: index))
-        } else {
-            return .failure(Errors.noMoreSource)
+    public static let one : Parser<String, Character> = {
+        let failure = ParseResult<String, Character>.failure(Errors.noMoreSource)
+        return Parser<String, Character> { input, index in
+            if index < input.endIndex {
+                return .success(output: input[index], input: input, next: input.index(after: index))
+            } else {
+                return failure
+            }
         }
-    }
+    }()
 
     /// Parses a string with the given length
     ///
     /// - Parameter length: the length the string should have
     /// - Returns: a parser that parses a string with exactly the given length
     public static func string(length: Int) -> Parser<String, String> {
-        Parser<String, String> { input, index in
+        let failure = ParseResult<String, String>.failure(Errors.noMoreSource)
+        return Parser<String, String> { input, index in
             guard let endIndex = input.index(index, offsetBy: length, limitedBy: input.endIndex) else {
-                return .failure(Errors.noMoreSource)
+                return failure
             }
             let output = input[index ..< endIndex]
             return .success(output: String(output), input: input, next: endIndex)
@@ -61,22 +69,24 @@ public enum StringParser {
     }
 
     public static func charPred(_ f: @escaping (Character) -> Bool) -> Parser<String, Character> {
-        let error = GenericParseError(message: "[WIP]") // TODO:
+        let noMoreSourceFailure = ParseResult<String, Character>.failure(Errors.noMoreSource)
+        let unsatisfiedPredicateFailure =  ParseResult<String, Character>.failure(Errors.unsatisfiedPredicate)
         return Parser<String, Character> { input, index in
             if index >= input.endIndex {
-                return .failure(Errors.noMoreSource)
+                return noMoreSourceFailure
             }
             let c = input[index]
             if f(c) {
                 return .success(output: c, input: input, next: input.index(after: index))
             } else {
-                return .failure(error)
+                return unsatisfiedPredicateFailure
             }
         }
     }
 
     public static func charWhilePred(_ f: @escaping (Character) -> Bool, min: Int, max: Int? = nil) -> Parser<String, [Character]> {
-        Parser<String, [Character]> { input, index in
+        let failure = ParseResult<String, [Character]>.failure(Errors.expectedAtLeast(count: min))
+        return Parser<String, [Character]> { input, index in
             var count = 0
             var i = index
             loop: while max == nil || count < max!, i < input.endIndex, f(input[i]) {
@@ -86,7 +96,7 @@ public enum StringParser {
             if count >= min {
                 return .success(output: Array(input[index ..< i]), input: input, next: i)
             } else {
-                return .failure(Errors.expectedAtLeast(min, got: count))
+                return failure
             }
         }
     }
@@ -126,7 +136,7 @@ public enum StringParser {
     // Specifically,
     // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
     public static func stringIn(_ xs: Set<String>) -> Parser<String, String> {
-        let error = GenericParseError(message: "Did not match stringIn(\(xs)).")
+        let failure = ParseResult<String, String>.failure(GenericParseError(message: "Did not match stringIn(\(xs))."))
         let trie = Trie<Character, String>()
         xs.forEach { trie.insert(Array($0), $0) }
 
@@ -134,13 +144,13 @@ public enum StringParser {
             if let (res, i) = trie.contains(input, index) {
                 return .success(output: res, input: input, next: i)
             } else {
-                return .failure(error)
+                return failure
             }
         }
     }
 
     public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<String, A> {
-        let error = GenericParseError(message: "Did not match dictionaryIn(\(dict)).")
+        let failure = ParseResult<String, A>.failure(GenericParseError(message: "Did not match dictionaryIn(\(dict))."))
         let trie = Trie<Character, A>()
         dict.forEach { k, v in trie.insert(Array(k), v) }
 
@@ -148,12 +158,12 @@ public enum StringParser {
             if let (res, i) = trie.contains(input, index) {
                 return .success(output: res, input: input, next: i)
             } else {
-                return .failure(error)
+                return failure
             }
         }
     }
 
-    public static let ascii = charPred { $0.isASCII }
+    public static let ascii: Parser<String, Character> = charPred { $0.isASCII }
 
     // MARK: - numbers
 
@@ -170,29 +180,35 @@ public enum StringParser {
 
     // MARK: - Common characters
 
-    public static let start: Parser<String, String> = Parser<String, String> { input, index in
-        if index == input.startIndex {
-            return .success(output: "", input: input, next: index)
-        } else {
-            return .failure(Errors.notTheEnd)
+    public static let start: Parser<String, String> = {
+        let failure = ParseResult<String, String>.failure(Errors.notTheEnd)
+        return Parser<String, String> { input, index in
+            if index == input.startIndex {
+                return .success(output: "", input: input, next: index)
+            } else {
+                return failure
+            }
         }
-    }
+    }()
 
-    public static let end: Parser<String, String> = Parser<String, String> { input, index in
-        if index == input.endIndex {
-            return .success(output: "", input: input, next: index)
-        } else {
-            return .failure(Errors.notTheEnd)
+    public static let end: Parser<String, String> = {
+        let failure = ParseResult<String, String>.failure(Errors.notTheEnd)
+        return Parser<String, String> { input, index in
+            if index == input.endIndex {
+                return .success(output: "", input: input, next: index)
+            } else {
+                return failure
+            }
         }
-    }
+    }()
 
     // MARK: - Whitespaces
 
     /// Parses one space character
-    public static let whitespace = charPred { $0.isWhitespace }
+    public static let whitespace: Parser<String, Character> = charPred { $0.isWhitespace }
 
     /// Parses at least one whitespace
-    public static let whitespaces = charWhilePred({ $0.isWhitespace }, min: 1)
+    public static let whitespaces: Parser<String, [Character]> = charWhilePred({ $0.isWhitespace }, min: 1)
 }
 
 extension Parser where Input == String {

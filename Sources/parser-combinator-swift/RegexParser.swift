@@ -13,7 +13,7 @@ public final class RegexParser: Parser<String, String> {
         ///
         /// - pattern: the pattern that was used
         /// - input: the input that failed on the pattern
-        case doesNotMatch(pattern: String, input: String)
+        case doesNotMatch(pattern: String)
 
         /// Regular expression is invalid (could not be evaluated by NSRegularExpression)
         case invalidRegex(String)
@@ -29,14 +29,16 @@ public final class RegexParser: Parser<String, String> {
     public init(_ regex: String) {
         self.regex = regex
         let nsRegex = try? NSRegularExpression(pattern: regex, options: [])
+        let invalidRegex = ParseResult<String, String>.failure(Error.invalidRegex(regex))
+        let doesNotMatch = ParseResult<String, String>.failure(Error.doesNotMatch(pattern: regex))
         super.init { input, index in
             guard let nsRegex = nsRegex else {
-                return .failure(Error.invalidRegex(regex))
+                return invalidRegex
             }
             let str = String(input[index...])
             let matches = nsRegex.matches(in: str, options: [.anchored], range: NSRange(location: 0, length: str.count))
             guard let first = matches.first else {
-                return .failure(Error.doesNotMatch(pattern: regex, input: str))
+                return doesNotMatch
             }
 
             let end = first.range.location + first.range.length
