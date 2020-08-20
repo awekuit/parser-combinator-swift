@@ -5,8 +5,8 @@ extension Parser {
             switch result {
             case let .success(_, _, nextIndex):
                 return .success(output: (), input: input, next: nextIndex)
-            case .failure:
-                return result as! ParseResult<Input, Void>
+            case let .failure(err):
+                return .failure(err)
             }
         }
     }
