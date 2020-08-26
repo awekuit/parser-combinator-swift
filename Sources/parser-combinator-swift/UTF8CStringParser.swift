@@ -44,7 +44,7 @@ public enum UTF8CStringParser {
         }
     }
 
-    public static let one : Parser<ContiguousArray<CChar>, CChar> = {
+    public static let one: Parser<ContiguousArray<CChar>, CChar> = {
         let failure = ParseResult<ContiguousArray<CChar>, ContiguousArray<CChar>.Element>.failure(Errors.noMoreSource)
 
         return Parser<ContiguousArray<CChar>, CChar> { input, index in
@@ -77,7 +77,7 @@ public enum UTF8CStringParser {
 
     public static func elemPred(_ f: @escaping (CChar) -> Bool) -> Parser<ContiguousArray<CChar>, String> {
         let noMoreSourceFailure = ParseResult<ContiguousArray<CChar>, String>.failure(Errors.noMoreSource)
-        let unsatisfiedPredicateFailure =  ParseResult<ContiguousArray<CChar>, String>.failure(Errors.unsatisfiedPredicate)
+        let unsatisfiedPredicateFailure = ParseResult<ContiguousArray<CChar>, String>.failure(Errors.unsatisfiedPredicate)
 
         return Parser<ContiguousArray<CChar>, String> { input, index in
             if index >= input.endIndexWithoutTerminator {
@@ -94,7 +94,7 @@ public enum UTF8CStringParser {
     }
 
     public static func elemWhilePred(_ f: @escaping (CChar) -> Bool, min: Int, max: Int? = nil) -> Parser<ContiguousArray<CChar>, String> {
-        let failure =  ParseResult<ContiguousArray<CChar>, String>.failure(Errors.expectedAtLeast(count: min))
+        let failure = ParseResult<ContiguousArray<CChar>, String>.failure(Errors.expectedAtLeast(count: min))
 
         return Parser<ContiguousArray<CChar>, String> { input, index in
             var i = index

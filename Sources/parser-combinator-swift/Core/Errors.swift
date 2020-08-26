@@ -39,7 +39,6 @@ public enum Errors: ParseError {
     case logged // FIXME:
 }
 
-
 /// A generic error that occured while parsing
 public struct GenericParseError: ParseError, Equatable {
     /// the message of the error

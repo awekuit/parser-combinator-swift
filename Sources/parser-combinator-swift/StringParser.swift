@@ -42,7 +42,7 @@ public enum StringParser {
     }
 
     /// Parses one Character from a given String
-    public static let one : Parser<String, Character> = {
+    public static let one: Parser<String, Character> = {
         let failure = ParseResult<String, Character>.failure(Errors.noMoreSource)
         return Parser<String, Character> { input, index in
             if index < input.endIndex {
@@ -70,7 +70,7 @@ public enum StringParser {
 
     public static func charPred(_ f: @escaping (Character) -> Bool) -> Parser<String, Character> {
         let noMoreSourceFailure = ParseResult<String, Character>.failure(Errors.noMoreSource)
-        let unsatisfiedPredicateFailure =  ParseResult<String, Character>.failure(Errors.unsatisfiedPredicate)
+        let unsatisfiedPredicateFailure = ParseResult<String, Character>.failure(Errors.unsatisfiedPredicate)
         return Parser<String, Character> { input, index in
             if index >= input.endIndex {
                 return noMoreSourceFailure

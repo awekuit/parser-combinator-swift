@@ -44,7 +44,7 @@ public enum UTF8Parser {
         }
     }
 
-    public static let one : Parser<String.UTF8View, String.UTF8View.Element> = {
+    public static let one: Parser<String.UTF8View, String.UTF8View.Element> = {
         let failure = ParseResult<String.UTF8View, String.UTF8View.Element>.failure(Errors.noMoreSource)
 
         return Parser<String.UTF8View, String.UTF8View.Element> { input, index in
@@ -81,7 +81,7 @@ public enum UTF8Parser {
     public static func elemPred(_ f: @escaping (String.UTF8View.Element) -> Bool) -> Parser<String.UTF8View, String> {
         let noMoreSourceFailure = ParseResult<String.UTF8View, String>.failure(Errors.noMoreSource)
         let encodingFailure = ParseResult<String.UTF8View, String>.failure(GenericParseError(message: "UTF8View to String encoding failed."))
-        let unsatisfiedPredicateFailure =  ParseResult<String.UTF8View, String>.failure(Errors.unsatisfiedPredicate)
+        let unsatisfiedPredicateFailure = ParseResult<String.UTF8View, String>.failure(Errors.unsatisfiedPredicate)
 
         return Parser<String.UTF8View, String> { input, index in
             guard index < input.endIndex else {
@@ -102,7 +102,7 @@ public enum UTF8Parser {
 
     public static func elemWhilePred(_ f: @escaping (String.UTF8View.Element) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF8View, String> {
         let encodingFailure = ParseResult<String.UTF8View, String>.failure(GenericParseError(message: "UTF8View to String encoding failed."))
-        let expectedAtLeastFailure =  ParseResult<String.UTF8View, String>.failure(Errors.expectedAtLeast(count: min))
+        let expectedAtLeastFailure = ParseResult<String.UTF8View, String>.failure(Errors.expectedAtLeast(count: min))
 
         return Parser<String.UTF8View, String> { input, index in
             var i = index

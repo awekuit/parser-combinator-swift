@@ -75,7 +75,7 @@ public enum UTF16Parser {
 
     public static func elemPred(_ f: @escaping (String.UTF16View.Element) -> Bool) -> Parser<String.UTF16View, String> {
         let noMoreSourceFailure = ParseResult<String.UTF16View, String>.failure(Errors.noMoreSource)
-        let unsatisfiedPredicateFailure =  ParseResult<String.UTF16View, String>.failure(Errors.unsatisfiedPredicate)
+        let unsatisfiedPredicateFailure = ParseResult<String.UTF16View, String>.failure(Errors.unsatisfiedPredicate)
 
         return Parser<String.UTF16View, String> { input, index in
             guard index < input.endIndex else {
@@ -91,7 +91,7 @@ public enum UTF16Parser {
     }
 
     public static func elemWhilePred(_ f: @escaping (String.UTF16View.Element) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF16View, String> {
-        let failure =  ParseResult<String.UTF16View, String>.failure(Errors.expectedAtLeast(count: min))
+        let failure = ParseResult<String.UTF16View, String>.failure(Errors.expectedAtLeast(count: min))
 
         return Parser<String.UTF16View, String> { input, index in
             var i = index
@@ -148,7 +148,7 @@ public enum UTF16Parser {
     }
 
     public static func stringWhilePred(_ length: Int, _ f: @escaping (String.UTF16View.SubSequence) -> Bool, min: Int, max: Int? = nil) -> Parser<String.UTF16View, String> {
-        let failure =  ParseResult<String.UTF16View, String>.failure(Errors.expectedAtLeast(count: min))
+        let failure = ParseResult<String.UTF16View, String>.failure(Errors.expectedAtLeast(count: min))
 
         return Parser<String.UTF16View, String> { input, index in
             var start: String.UTF16View.Index = index
