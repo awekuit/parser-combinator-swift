@@ -10,114 +10,68 @@
 // Therefore, I have implemented it here.
 //
 
-import Foundation
+let BITS = 8
+let WIDTH = 1 << BITS
+let MASK: UInt16 = UInt16(WIDTH) - 1
 
-public class TrieNode<T: Hashable, O> {
+public final class Trie<O>: CustomStringConvertible {
     var original: O?
-    var value: T?
-    weak var parentNode: TrieNode?
-    var children: [T: TrieNode] = [:]
-    var isTerminating = false
-    var isLeaf: Bool {
-        children.count == 0
+    lazy var children: ContiguousArray<Trie?> = ContiguousArray(repeating: nil, count: WIDTH)
+    var isLeaf: Bool = false
+    public var description: String {
+        "Trie(isLeaf = \(isLeaf), original = \(String(describing: original)), chirdren = \(Array(children))"
     }
 
-    /// Initializes a node.
-    ///
-    /// - Parameters:
-    ///   - value: The value that goes into the node
-    ///   - parentNode: A reference to this node's parent
-    init(value: T? = nil, parentNode: TrieNode? = nil) {
-        self.value = value
-        self.parentNode = parentNode
-    }
-
-    /// Adds a child node to self.  If the child is already present,
-    /// do nothing.
-    ///
-    /// - Parameter value: The item to be added to this node.
-    func addNode(value: T) {
-        guard children[value] == nil else {
+    init(_ elementPairs: [([UInt8], O)]) {
+        let pairs: [([UInt8], O)] = elementPairs.filter { !$0.0.isEmpty }
+        let dict: [UInt8: [([UInt8], O)]] =
+            Dictionary(grouping: pairs) { elements, _ in elements.first! }
+        let childrenDict: [UInt8: Trie] = dict.mapValues { sameHeadPairs in
+            let tails = sameHeadPairs.map { pair in (Array(pair.0[1 ..< pair.0.count]), pair.1) }
+            return Trie(tails)
+        }
+        guard !childrenDict.isEmpty else {
+            original = elementPairs.first?.1 // if `childrenDict.isEmpty`, elementPairs.count is 1
+            isLeaf = true
             return
         }
-        children[value] = TrieNode(value: value, parentNode: self)
+        childrenDict.forEach { key, child in children[Int(key)] = child }
     }
 }
 
-public class Trie<T: Hashable, O> {
-    public typealias Node = TrieNode<T, O>
-    public let root: Node
-    fileprivate var wordCount: Int
-
-    /// The number of words in the trie
-    public var count: Int {
-        wordCount
+extension Trie {
+    convenience init(_ elementPairs: [(String.UTF16View, O)]) {
+        self.init(elementPairs.map { pair in (Array(pair.0), pair.1) })
     }
 
-    /// Is the trie empty?
-    public var isEmpty: Bool {
-        wordCount == 0
-    }
-
-    /// Creates an empty trie.
-    public init() {
-        root = Node()
-        wordCount = 0
-    }
-
-    public func insert(_ elements: [T], _ original: O) {
-        guard !elements.isEmpty else {
-            return
+    convenience init(_ elementPairs: [([String.UTF16View.Element], O)]) {
+        let separatedElementPairs: [([UInt8], O)] = elementPairs.map { pair in
+            let uint8s: [UInt8] = pair.0.flatMap { utf16Elem in [UInt8(utf16Elem >> BITS), UInt8(utf16Elem & MASK)] }
+            return (uint8s, pair.1)
         }
-        var currentNode = root
-        for elem in elements {
-            if let childNode = currentNode.children[elem] {
-                currentNode = childNode
-            } else {
-                currentNode.addNode(value: elem)
-                currentNode = currentNode.children[elem]!
-            }
-        }
-        // Word already present?
-        guard !currentNode.isTerminating else {
-            return
-        }
-        wordCount += 1
-        currentNode.isTerminating = true
-        currentNode.original = original
+        self.init(separatedElementPairs)
     }
-}
 
-extension Trie where T == Character {
-    public func contains(_ source: String, _ index: String.Index) -> (O, String.Index)? {
-        var i: String.Index = index
-        var currentNode = root
-        loop: while i < source.endIndex {
-            let elem = source[i]
-            i = source.index(after: i)
-            if let childNode = currentNode.children[elem] {
-                currentNode = childNode
-                if currentNode.isTerminating {
-                    return (currentNode.original!, i)
-                }
-            } else {
-                return nil
-            }
-        }
-        return nil
-    }
-}
+//    convenience init(_ elementPairs: [(String.UTF8View, O)]) {
+    /// /        let separatedElementPairs: [([UInt8], O)] = elementPairs.map{ pair in
+    /// /            let uint8s: [UInt8] = pair.0.map{UInt8($0)}
+    /// /            return (uint8s, pair.1)
+    /// /        }
+//        self.init(elementPairs)
+//    }
 
-extension Trie where T == String.UTF16View.Element {
     public func contains(_ source: String.UTF16View, _ index: String.UTF16View.Index) -> (O, String.UTF16View.Index)? {
         var i: String.UTF16View.Index = index
-        var currentNode = root
+        var currentNode = self
         loop: while i < source.endIndex {
             let elem = source[i]
             i = source.index(after: i)
-            if let childNode = currentNode.children[elem] {
-                currentNode = childNode
-                if currentNode.isTerminating {
+
+            let e1 = Int(elem >> BITS)
+            let e2 = Int(elem & MASK)
+            if let childNode1 = currentNode.children[e1], let childNode2 = childNode1.children[e2] {
+                currentNode = childNode2
+                if currentNode.isLeaf {
                     return (currentNode.original!, i)
                 }
             } else {
@@ -126,18 +80,17 @@ extension Trie where T == String.UTF16View.Element {
         }
         return nil
     }
-}
 
-extension Trie where T == String.UTF8View.Element {
     public func contains(_ source: String.UTF8View, _ index: String.UTF8View.Index) -> (O, String.UTF8View.Index)? {
         var i: String.UTF8View.Index = index
-        var currentNode = root
+        var currentNode = self
         loop: while i < source.endIndex {
             let elem = source[i]
             i = source.index(after: i)
-            if let childNode = currentNode.children[elem] {
+
+            if let childNode = currentNode.children[Int(elem)] {
                 currentNode = childNode
-                if currentNode.isTerminating {
+                if currentNode.isLeaf {
                     return (currentNode.original!, i)
                 }
             } else {
@@ -146,24 +99,42 @@ extension Trie where T == String.UTF8View.Element {
         }
         return nil
     }
+
+//    public func contains(_ source: ContiguousArray<CChar>, _ index: Int) -> (O, Int)? {
+//        var i: Int = index
+//        var currentNode = self
+//        loop: while i < source.endIndex {
+//            let elem = source[i]
+//            i += 1
+//            if let childNode = currentNode.children[elem] {
+//                currentNode = childNode
+//                if currentNode.isTerminating {
+//                    return (currentNode.original!, i)
+//                }
+//            } else {
+//                return nil
+//            }
+//        }
+//        return nil
+//    }
 }
 
-extension Trie where T == CChar {
-    public func contains(_ source: ContiguousArray<CChar>, _ index: Int) -> (O, Int)? {
-        var i: Int = index
-        var currentNode = root
-        loop: while i < source.endIndex {
-            let elem = source[i]
-            i += 1
-            if let childNode = currentNode.children[elem] {
-                currentNode = childNode
-                if currentNode.isTerminating {
-                    return (currentNode.original!, i)
-                }
-            } else {
-                return nil
-            }
-        }
-        return nil
-    }
-}
+// extension Trie where T == Character {
+//    public func contains(_ source: String, _ index: String.Index) -> (O, String.Index)? {
+//        var i: String.Index = index
+//        var currentNode = root
+//        loop: while i < source.endIndex {
+//            let elem = source[i]
+//            i = source.index(after: i)
+//            if let childNode = currentNode.children[elem] {
+//                currentNode = childNode
+//                if currentNode.isTerminating {
+//                    return (currentNode.original!, i)
+//                }
+//            } else {
+//                return nil
+//            }
+//        }
+//        return nil
+//    }
+// }

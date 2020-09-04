@@ -162,58 +162,58 @@ public enum UTF8CStringParser {
         elemWhilePred({ set.contains($0) }, min: min, max: max)
     }
 
-    public static func stringIn(_ xs: String...) -> Parser<ContiguousArray<CChar>, String> { stringIn(xs) }
-
-    public static func stringIn(_ xs: [String]) -> Parser<ContiguousArray<CChar>, String> { stringIn(Set(xs.map { $0.utf8CString })) }
-
-    // The type of argument xs cannot be `Set<String>`.
-    // Because `Set<ContiguousArray<CChar>>` and `Set<String>` have different deduplication criteria.
-    // Specifically,
-    // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
-    // - Set(arrayLiteral: "\u{2000}".utf8CString, "\u{2002}".utf8CString).count == 2
-    public static func stringIn(_ xs: Set<ContiguousArray<CChar>>) -> Parser<ContiguousArray<CChar>, String> {
-        let failure = ParseResult<ContiguousArray<CChar>, String>.failure(GenericParseError(message: "Did not match stringIn(\(xs))."))
-        let trie = Trie<CChar, String>()
-        xs.forEach { trie.insert(Array($0).dropLast(), String(cCharArray: $0)) }
-
-        return Parser<ContiguousArray<CChar>, String> { input, index in
-            var i: Int = index
-            var currentNode = trie.root
-            var matched = false // FIXME: Remove this var if that is possible.
-            loop: while i < input.endIndexWithoutTerminator {
-                let elem = input[i]
-                i += 1
-                if let childNode = currentNode.children[elem] {
-                    currentNode = childNode
-                    if currentNode.isTerminating {
-                        matched = true
-                        break loop
-                    }
-                } else {
-                    break loop
-                }
-            }
-            if matched {
-                return .success(output: currentNode.original!, input: input, next: i)
-            } else {
-                return failure
-            }
-        }
-    }
-
-    public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<ContiguousArray<CChar>, A> {
-        let failure = ParseResult<ContiguousArray<CChar>, A>.failure(GenericParseError(message: "Did not match dictionaryIn(\(dict))."))
-        let trie = Trie<CChar, A>()
-        dict.forEach { k, v in trie.insert(Array(k.utf8CString).dropLast(), v) }
-
-        return Parser<ContiguousArray<CChar>, A> { input, index in
-            if let (res, i) = trie.contains(input, index) {
-                return .success(output: res, input: input, next: i)
-            } else {
-                return failure
-            }
-        }
-    }
+//    public static func stringIn(_ xs: String...) -> Parser<ContiguousArray<CChar>, String> { stringIn(xs) }
+//
+//    public static func stringIn(_ xs: [String]) -> Parser<ContiguousArray<CChar>, String> { stringIn(Set(xs.map { $0.utf8CString })) }
+//
+//    // The type of argument xs cannot be `Set<String>`.
+//    // Because `Set<ContiguousArray<CChar>>` and `Set<String>` have different deduplication criteria.
+//    // Specifically,
+//    // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
+//    // - Set(arrayLiteral: "\u{2000}".utf8CString, "\u{2002}".utf8CString).count == 2
+//    public static func stringIn(_ xs: Set<ContiguousArray<CChar>>) -> Parser<ContiguousArray<CChar>, String> {
+//        let failure = ParseResult<ContiguousArray<CChar>, String>.failure(GenericParseError(message: "Did not match stringIn(\(xs))."))
+//        let trie = Trie<CChar, String>()
+//        xs.forEach { trie.insert(Array($0).dropLast(), String(cCharArray: $0)) }
+//
+//        return Parser<ContiguousArray<CChar>, String> { input, index in
+//            var i: Int = index
+//            var currentNode = trie.root
+//            var matched = false // FIXME: Remove this var if that is possible.
+//            loop: while i < input.endIndexWithoutTerminator {
+//                let elem = input[i]
+//                i += 1
+//                if let childNode = currentNode.children[elem] {
+//                    currentNode = childNode
+//                    if currentNode.isTerminating {
+//                        matched = true
+//                        break loop
+//                    }
+//                } else {
+//                    break loop
+//                }
+//            }
+//            if matched {
+//                return .success(output: currentNode.original!, input: input, next: i)
+//            } else {
+//                return failure
+//            }
+//        }
+//    }
+//
+//    public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<ContiguousArray<CChar>, A> {
+//        let failure = ParseResult<ContiguousArray<CChar>, A>.failure(GenericParseError(message: "Did not match dictionaryIn(\(dict))."))
+//        let trie = Trie<CChar, A>()
+//        dict.forEach { k, v in trie.insert(Array(k.utf8CString).dropLast(), v) }
+//
+//        return Parser<ContiguousArray<CChar>, A> { input, index in
+//            if let (res, i) = trie.contains(input, index) {
+//                return .success(output: res, input: input, next: i)
+//            } else {
+//                return failure
+//            }
+//        }
+//    }
 
     // MARK: - numbers
 

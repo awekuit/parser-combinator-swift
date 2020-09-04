@@ -128,40 +128,40 @@ public enum StringParser {
         charWhilePred({ set.contains($0) }, min: min, max: max).map { String($0) }
     }
 
-    public static func stringIn(_ xs: String...) -> Parser<String, String> { stringIn(xs) }
-
-    public static func stringIn(_ xs: [String]) -> Parser<String, String> { stringIn(Set(xs)) }
-
-    // Note that Set<String> can be counterintuitive in deduplication criteria !
-    // Specifically,
-    // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
-    public static func stringIn(_ xs: Set<String>) -> Parser<String, String> {
-        let failure = ParseResult<String, String>.failure(GenericParseError(message: "Did not match stringIn(\(xs))."))
-        let trie = Trie<Character, String>()
-        xs.forEach { trie.insert(Array($0), $0) }
-
-        return Parser<String, String> { input, index in
-            if let (res, i) = trie.contains(input, index) {
-                return .success(output: res, input: input, next: i)
-            } else {
-                return failure
-            }
-        }
-    }
-
-    public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<String, A> {
-        let failure = ParseResult<String, A>.failure(GenericParseError(message: "Did not match dictionaryIn(\(dict))."))
-        let trie = Trie<Character, A>()
-        dict.forEach { k, v in trie.insert(Array(k), v) }
-
-        return Parser<String, A> { input, index in
-            if let (res, i) = trie.contains(input, index) {
-                return .success(output: res, input: input, next: i)
-            } else {
-                return failure
-            }
-        }
-    }
+//    public static func stringIn(_ xs: String...) -> Parser<String, String> { stringIn(xs) }
+//
+//    public static func stringIn(_ xs: [String]) -> Parser<String, String> { stringIn(Set(xs)) }
+//
+//    // Note that Set<String> can be counterintuitive in deduplication criteria !
+//    // Specifically,
+//    // - Set(arrayLiteral: "\u{2000}", "\u{2002}").count == 1
+//    public static func stringIn(_ xs: Set<String>) -> Parser<String, String> {
+//        let failure = ParseResult<String, String>.failure(GenericParseError(message: "Did not match stringIn(\(xs))."))
+//        let trie = Trie<Character, String>()
+//        xs.forEach { trie.insert(Array($0), $0) }
+//
+//        return Parser<String, String> { input, index in
+//            if let (res, i) = trie.contains(input, index) {
+//                return .success(output: res, input: input, next: i)
+//            } else {
+//                return failure
+//            }
+//        }
+//    }
+//
+//    public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<String, A> {
+//        let failure = ParseResult<String, A>.failure(GenericParseError(message: "Did not match dictionaryIn(\(dict))."))
+//        let trie = Trie<Character, A>()
+//        dict.forEach { k, v in trie.insert(Array(k), v) }
+//
+//        return Parser<String, A> { input, index in
+//            if let (res, i) = trie.contains(input, index) {
+//                return .success(output: res, input: input, next: i)
+//            } else {
+//                return failure
+//            }
+//        }
+//    }
 
     public static let ascii: Parser<String, Character> = charPred { $0.isASCII }
 
