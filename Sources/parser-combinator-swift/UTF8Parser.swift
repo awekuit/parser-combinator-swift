@@ -170,19 +170,18 @@ public enum UTF8Parser {
     // - Set(arrayLiteral: Array("\u{2000}".utf8), Array("\u{2002}".utf8)).count == 2
     public static func stringIn(_ xs: Set<[String.UTF8View.Element]>) -> Parser<String.UTF8View, String> {
         let failure = ParseResult<String.UTF8View, String>.failure(GenericParseError(message: "Did not match stringIn(\(xs))."))
-        let trie = Trie<String.UTF8View.Element, String>()
-        xs.forEach { trie.insert($0, String($0)!) }
+        let trie = Trie<String.UTF8View.Element, String>(xs.map { ($0, String($0)!) })
 
         return Parser<String.UTF8View, String> { input, index in
             var i: String.UTF8View.Index = index
-            var currentNode = trie.root
+            var currentNode = trie
             var matched = false // FIXME: Remove this var if that is possible.
             loop: while i < input.endIndex {
                 let elem = input[i]
                 i = input.index(after: i)
-                if let childNode = currentNode.children[elem] {
+                if let childNode = currentNode.query(elem) {
                     currentNode = childNode
-                    if currentNode.isTerminating {
+                    if currentNode.isLeaf {
                         matched = true
                         break loop
                     }
@@ -200,8 +199,7 @@ public enum UTF8Parser {
 
     public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<String.UTF8View, A> {
         let failure = ParseResult<String.UTF8View, A>.failure(GenericParseError(message: "Did not match dictionaryIn(\(dict))."))
-        let trie = Trie<String.UTF8View.Element, A>()
-        dict.forEach { k, v in trie.insert(Array(k.utf8), v) }
+        let trie = Trie<String.UTF8View.Element, A>(dict.map { k, v in (Array(k.utf8), v) })
 
         return Parser<String.UTF8View, A> { input, index in
             if let (res, i) = trie.contains(input, index) {

@@ -173,19 +173,18 @@ public enum UTF8CStringParser {
     // - Set(arrayLiteral: "\u{2000}".utf8CString, "\u{2002}".utf8CString).count == 2
     public static func stringIn(_ xs: Set<ContiguousArray<CChar>>) -> Parser<ContiguousArray<CChar>, String> {
         let failure = ParseResult<ContiguousArray<CChar>, String>.failure(GenericParseError(message: "Did not match stringIn(\(xs))."))
-        let trie = Trie<CChar, String>()
-        xs.forEach { trie.insert(Array($0).dropLast(), String(cCharArray: $0)) }
+        let trie = Trie<CChar, String>(xs.map { (Array($0).dropLast(), String(cCharArray: $0)) })
 
         return Parser<ContiguousArray<CChar>, String> { input, index in
             var i: Int = index
-            var currentNode = trie.root
+            var currentNode = trie
             var matched = false // FIXME: Remove this var if that is possible.
             loop: while i < input.endIndexWithoutTerminator {
                 let elem = input[i]
                 i += 1
-                if let childNode = currentNode.children[elem] {
+                if let childNode = currentNode.query(elem) {
                     currentNode = childNode
-                    if currentNode.isTerminating {
+                    if currentNode.isLeaf {
                         matched = true
                         break loop
                     }
@@ -203,8 +202,7 @@ public enum UTF8CStringParser {
 
     public static func dictionaryIn<A>(_ dict: [String: A]) -> Parser<ContiguousArray<CChar>, A> {
         let failure = ParseResult<ContiguousArray<CChar>, A>.failure(GenericParseError(message: "Did not match dictionaryIn(\(dict))."))
-        let trie = Trie<CChar, A>()
-        dict.forEach { k, v in trie.insert(Array(k.utf8CString).dropLast(), v) }
+        let trie = Trie<CChar, A>(dict.map { k, v in (Array(k.utf8CString).dropLast(), v) })
 
         return Parser<ContiguousArray<CChar>, A> { input, index in
             if let (res, i) = trie.contains(input, index) {
